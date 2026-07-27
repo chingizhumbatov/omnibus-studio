@@ -1,8 +1,9 @@
 [package]
-name = "tauri-app"
+name = "omnibus-studio"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Universal industrial client"
+authors = ["Chingiz Humbatov"]
+license = "GPL-3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
