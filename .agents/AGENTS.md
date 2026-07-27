@@ -13,3 +13,7 @@ Prioritize the simplest and most straightforward native solutions. Do not introd
 
 5. **Strict Context Isolation (Single Focus)**
 Solve only the specific task requested in the current prompt. If you are asked to write the `mpsc` channel logic for the Data Hub, do not attempt to draft React UI components or suggest frontend design improvements in the same response. Stay strictly within the requested architectural boundaries.
+
+6. **Style Guide Enforcement**
+- **Rust Backend**: Enforce standard `rustfmt` formatting and strict `cargo clippy` linting.
+- **Frontend (TypeScript/Tauri)**: Enforce ESLint with `@typescript-eslint/recommended` and Prettier for code formatting.
