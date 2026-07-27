@@ -11,13 +11,7 @@ pub enum HubMessage {
         raw_payload: Payload,
     },
     /// Sent when a worker encounters a device timeout, CRC error, or electrical fault.
-    DeviceFault {
-        device_id: String,
-        error_code: u8,
-    },
+    DeviceFault { device_id: String, error_code: u8 },
     /// Sent when the OS-level port status changes (e.g., USB disconnected).
-    PortStatusChange {
-        port_id: String,
-        is_open: bool,
-    },
+    PortStatusChange { port_id: String, is_open: bool },
 }

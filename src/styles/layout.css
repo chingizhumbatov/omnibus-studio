@@ -1,0 +1,79 @@
+/* Base App Layout resembling VS Code */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--color-bg-base);
+}
+
+/* Sidebar / Explorer */
+.app-sidebar {
+  width: 250px;
+  min-width: 200px;
+  background-color: var(--color-bg-sidebar);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-sidebar-header {
+  height: 35px;
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.app-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Main Content Area */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-base);
+  overflow: hidden;
+}
+
+.app-toolbar {
+  height: 35px;
+  background-color: var(--color-bg-base);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+}
+
+/* Breadcrumbs or Tabs placeholder */
+.app-tabs {
+  display: flex;
+  height: 35px;
+  background-color: var(--color-bg-sidebar);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-tab {
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  background-color: var(--color-bg-base);
+  color: var(--color-accent);
+  font-size: var(--font-size-sm);
+  border-top: 1px solid var(--color-accent);
+  border-right: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.app-content {
+  flex: 1;
+  padding: var(--space-4);
+  overflow-y: auto;
+  color: var(--color-text-main);
+}

@@ -17,3 +17,6 @@ Solve only the specific task requested in the current prompt. If you are asked t
 6. **Style Guide Enforcement**
 - **Rust Backend**: Enforce standard `rustfmt` formatting and strict `cargo clippy` linting.
 - **Frontend (TypeScript/Tauri)**: Enforce ESLint with `@typescript-eslint/recommended` and Prettier for code formatting.
+
+7. **Git Commit Conventional Standard**
+All commits must strictly follow the Conventional Commits specification. Messages must be in English and use the imperative mood (e.g., `feat: add ...`). Valid types are `feat`, `fix`, `chore`, `refactor`, `docs`, `style`, `perf`, `test`. Include scopes (`core`, `ui`, `ipc`) when appropriate.

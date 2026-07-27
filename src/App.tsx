@@ -1,50 +1,39 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { AppLayout } from './components/layout/AppLayout';
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <AppLayout>
+      <div style={{ maxWidth: '800px', margin: '0 auto', marginTop: '2rem' }}>
+        <h1 style={{ marginBottom: '1rem', fontWeight: 500 }}>Omnibus Studio</h1>
+        <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+          Data Hub and Workspace environment is ready.
+        </p>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <div
+          style={{
+            background: 'var(--color-bg-sidebar)',
+            padding: '1.5rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 'var(--font-size-md)',
+              marginBottom: '1rem',
+              color: 'var(--color-accent)',
+            }}
+          >
+            System Status
+          </h2>
+          <ul style={{ listStyle: 'none', fontSize: 'var(--font-size-sm)' }}>
+            <li style={{ marginBottom: '0.5rem' }}>✓ UI Foundation Initialized (VS Code Theme)</li>
+            <li style={{ marginBottom: '0.5rem' }}>✓ Git Hooks & Formatting (Active)</li>
+            <li style={{ marginBottom: '0.5rem' }}>⏳ Rust Core & IPC Data Contracts (Pending)</li>
+          </ul>
+        </div>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    </AppLayout>
   );
 }
 
