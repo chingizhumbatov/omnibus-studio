@@ -15,6 +15,7 @@ The application leverages a decoupled architecture using **Tauri v2 (Rust + Reac
 
 ### 3.1 Configuration Management: Profiles & Workspaces
 * **Device Profiles (Templates)**: Reusable JSON files describing a specific device's memory map (registers, data types) independent of connection parameters. Supports complex data types including Int64/Float64, Arrays, and Raw byte streams.
+  * **Tag Config (Extended)**: Each tag defines `tag_id`, `name`, `unit`, `register_type`, `address`, `bit_offset` (for packed booleans), `data_type`, `byte_order` (for Endianness handling: ABCD, CDAB, etc.), and a `scale` multiplier.
 * **Workspaces (Sessions)**: The master configuration file linking physical connection parameters (Baud rate, IP) to instantiated Device Profiles (Slave IDs) and saving the user's dashboard layout. Sessions also contain dynamic system parameters, such as the UI rendering throttle interval (`ui_throttle_ms`).
 
 ### 3.2 Core Protocol Communications & Auto-Recovery
@@ -45,7 +46,8 @@ The application features a hybrid plugin architecture allowing community-driven 
 ### 6.1 System Core (Rust Backend)
 Operates at the OS level utilizing the Tokio asynchronous runtime to ensure high-performance, non-blocking hardware I/O.
 * **Isolated Connection Workers**: Independent coroutines managing dedicated physical ports (COM or TCP). If a fault or timeout occurs on one line, the respective worker enters a background auto-recovery loop without blocking the polling cycles of other active connections.
-* **Data Hub (Tag Dictionary)**: A centralized in-memory state repository. Workers push raw bytes (`Vec<u8>`) read from hardware registers directly into this hub.
+* **Data Hub (Tag Dictionary)**: A centralized in-memory state repository. Workers push structured tag updates directly into this hub.
+* **Binary Payload Decoder**: A high-performance Rust engine living inside the Protocol Adapters. It slices raw byte streams (`Vec<u8>`) based on register offsets, handles complex Endianness (Byte Swapping), extracts specific bits via masks, and applies scaling multipliers, outputting strongly-typed `TagValue`s to the Data Hub.
 * **Workspace Manager**: Handles file system operations, loading JSON Device Profiles, and initializing full workspace sessions upon application startup.
 
 ### 6.2 IPC Bridge & Event Bus (Tauri)
@@ -58,7 +60,6 @@ Acts as a "smart client" strictly responsible for data parsing, state management
 * **Tree View Navigation**: A sidebar displaying the hierarchy of physical ports and instantiated devices, complete with real-time connection status indicators (Transport/Device errors).
 * **Dashboard System (Canvas)**: A dynamic grid supporting drag-and-drop, allowing tags from disparate physical networks to be placed onto shared widgets.
 * **Time-Series Charts**: Renders asynchronous timelines, dynamically interpolating mixed-frequency data and visually dimming stale data during connection timeouts.
-* **Payload Decoder**: TypeScript utilities (utilizing DataView) that parse incoming raw byte arrays into standard types (Float32/64, Int16/32/64), strings, and arrays on the fly prior to rendering.
 
 ### 6.4 Integration & Extensions (Plugins & AI)
 Modules enabling universal adaptability and intelligent diagnostics.
