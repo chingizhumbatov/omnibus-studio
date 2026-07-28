@@ -1670,6 +1670,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ieee754"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9007da9cacbd3e6343da136e98b0d2df013f553d35bdec8b518f07bea768e19c"
+
+[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2348,6 +2354,7 @@ dependencies = [
 name = "omnibus-studio"
 version = "0.1.0"
 dependencies = [
+ "rmodbus",
  "serde",
  "serde_json",
  "tauri",
@@ -2803,6 +2810,15 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-streams",
  "web-sys",
+]
+
+[[package]]
+name = "rmodbus"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae086fe401655097112f1bd988012c0334d19b0c495128b256f1506873c6ba8f"
+dependencies = [
+ "ieee754",
 ]
 
 [[package]]

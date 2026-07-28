@@ -1,4 +1,5 @@
 use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use tokio_serial::SerialPortBuilderExt;
@@ -6,6 +7,7 @@ use tracing::info;
 
 use super::connection::ConnectionWorker;
 use super::context::CommandContext;
+use super::parser::ProtocolAdapter;
 use crate::core::error::{CoreError, Result};
 use crate::core::messages::HubMessage;
 use crate::workspace::session::{ConnectionConfig, ConnectionType};
@@ -15,11 +17,15 @@ use crate::workspace::session::{ConnectionConfig, ConnectionType};
 /// Does not parse protocols (e.g. Modbus) directly.
 pub struct SerialProtocolWorker {
     task_handle: Option<JoinHandle<()>>,
+    adapter: Option<Box<dyn ProtocolAdapter>>,
 }
 
 impl SerialProtocolWorker {
-    pub fn new() -> Self {
-        Self { task_handle: None }
+    pub fn new(adapter: Box<dyn ProtocolAdapter>) -> Self {
+        Self {
+            task_handle: None,
+            adapter: Some(adapter),
+        }
     }
 
     fn map_parity(parity: &str) -> tokio_serial::Parity {
@@ -47,11 +53,7 @@ impl SerialProtocolWorker {
     }
 }
 
-impl Default for SerialProtocolWorker {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Default is removed because we need an adapter to construct it.
 
 impl ConnectionWorker for SerialProtocolWorker {
     async fn start(&mut self, config: ConnectionConfig, context: CommandContext) -> Result<()> {
@@ -87,7 +89,7 @@ impl ConnectionWorker for SerialProtocolWorker {
             .parity(Self::map_parity(&parity))
             .stop_bits(Self::map_stop_bits(stop_bits));
 
-        let _stream = match builder.open_native_async() {
+        let mut stream = match builder.open_native_async() {
             Ok(s) => s,
             Err(e) => {
                 return Err(CoreError::ConnectionFault {
@@ -109,36 +111,36 @@ impl ConnectionWorker for SerialProtocolWorker {
             .await;
 
         let polling_interval = Duration::from_millis(config.polling_interval_ms);
-        let _ctx = context.clone();
+        let ctx = context.clone();
+        let connection_id = config.connection_id.clone();
+        let mut adapter = self
+            .adapter
+            .take()
+            .ok_or_else(|| CoreError::InvalidRequest("Adapter missing".into()))?;
 
         // Start the polling loop
         let handle = tokio::spawn(async move {
-            let _buf = vec![0u8; 1024];
-
             loop {
-                // Here we would typically delegate to a Protocol Parser (e.g. Modbus Parser)
-                // For now, in Option B layered approach, we just ensure the port stays open.
+                if let Some(request) = adapter.next_request() {
+                    if stream.write_all(&request).await.is_ok() {
+                        let mut buf = vec![0u8; 1024];
+                        if let Ok(n) = stream.read(&mut buf).await {
+                            if let Ok(tags) = adapter.process_response(&buf[..n]) {
+                                for (device_id, tag) in tags {
+                                    let _ = ctx
+                                        .send_to_hub(HubMessage::UpdateTag {
+                                            connection_id: connection_id.clone(),
+                                            device_id,
+                                            state: tag,
+                                        })
+                                        .await;
+                                }
+                            }
+                        }
+                    }
+                }
 
-                // Let's try to read some bytes just to detect disconnects.
-                // Normally this would be driven by the parser sending requests.
-                // Since this is RS-485, we shouldn't read unless we expect data, but for USB disconnect detection,
-                // tokio-serial will yield an error if the device is unplugged.
-
-                // We sleep for polling interval to prevent 100% CPU usage
                 sleep(polling_interval).await;
-
-                // Example check (if we were polling):
-                // match stream.read(&mut buf).await {
-                //    Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                //         // Timeout (device didn't answer). We keep going.
-                //    }
-                //    Err(e) => {
-                //         error!("Fatal serial error (device disconnected?): {}", e);
-                //         let _ = ctx.send_to_hub(HubMessage::ConnectionStatus { ... is_connected: false });
-                //         break; // Exit loop, close port
-                //    }
-                //    Ok(n) => { ... }
-                // }
             }
         });
 

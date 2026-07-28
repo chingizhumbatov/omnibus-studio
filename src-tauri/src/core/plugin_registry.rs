@@ -8,8 +8,8 @@ use crate::protocol::connection::ConnectionWorker;
 use crate::protocol::context::CommandContext;
 use crate::workspace::session::{ConnectionConfig, WorkspaceSession};
 
-// Temporary import for Mock worker (Phase 4.3)
 use crate::protocol::mock::MockProtocolWorker;
+use crate::protocol::modbus_rtu::ModbusRtuAdapter;
 use crate::protocol::serial::SerialProtocolWorker;
 
 /// Wrapper enum to bypass the lack of dynamic dispatch (dyn compatibility)
@@ -68,7 +68,8 @@ impl PluginRegistry {
                         "Instantiating SerialProtocolWorker for connection: {}",
                         config.connection_id
                     );
-                    ActiveWorker::Serial(SerialProtocolWorker::new())
+                    let adapter = ModbusRtuAdapter::new(config.devices.clone());
+                    ActiveWorker::Serial(SerialProtocolWorker::new(Box::new(adapter)))
                 }
                 crate::workspace::session::ConnectionType::Tcp { .. } => {
                     info!(
@@ -114,7 +115,7 @@ impl PluginRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::workspace::session::{ConnectionConfig, ConnectionType};
+    use crate::workspace::session::ConnectionConfig;
 
     #[tokio::test]
     async fn test_plugin_registry_lifecycle() {
@@ -126,13 +127,13 @@ mod tests {
             ui_throttle_ms: 100,
             connections: vec![ConnectionConfig {
                 connection_id: "conn_1".to_string(),
-                connection_type: ConnectionType::Tcp {
+                connection_type: crate::workspace::session::ConnectionType::Tcp {
                     ip: "127.0.0.1".to_string(),
-                    port: 502,
+                    port: 5020,
                 },
-                polling_interval_ms: 50,
+                polling_interval_ms: 10,
+                devices: vec![],
             }],
-            devices: vec![],
         };
 
         // Test starting

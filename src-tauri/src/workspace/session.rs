@@ -23,6 +23,7 @@ pub struct ConnectionConfig {
     pub connection_id: String,
     pub connection_type: ConnectionType,
     pub polling_interval_ms: u64,
+    pub devices: Vec<DeviceInstance>,
 }
 
 /// An instance of a device physically connected to a specific connection.
@@ -44,7 +45,6 @@ pub struct WorkspaceSession {
     pub ui_throttle_ms: u64,
 
     pub connections: Vec<ConnectionConfig>,
-    pub devices: Vec<DeviceInstance>,
 }
 
 #[cfg(test)]
@@ -67,6 +67,12 @@ mod tests {
                         stop_bits: 1,
                     },
                     polling_interval_ms: 50,
+                    devices: vec![DeviceInstance {
+                        instance_id: "dev_1".to_string(),
+                        profile_id: "sensor_x".to_string(),
+                        connection_id: "com3_modbus".to_string(),
+                        slave_id: 1,
+                    }],
                 },
                 ConnectionConfig {
                     connection_id: "tcp_modbus".to_string(),
@@ -75,14 +81,9 @@ mod tests {
                         port: 502,
                     },
                     polling_interval_ms: 1000,
+                    devices: vec![],
                 },
             ],
-            devices: vec![DeviceInstance {
-                instance_id: "dev_1".to_string(),
-                profile_id: "sensor_x".to_string(),
-                connection_id: "com3_modbus".to_string(),
-                slave_id: 1,
-            }],
         };
 
         let json = serde_json::to_string_pretty(&session).unwrap();
@@ -93,7 +94,7 @@ mod tests {
 
         let deserialized: WorkspaceSession = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.connections.len(), 2);
-        assert_eq!(deserialized.devices.len(), 1);
+        assert_eq!(deserialized.connections[0].devices.len(), 1);
         assert_eq!(deserialized.ui_throttle_ms, 100);
     }
 }
