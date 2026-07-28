@@ -1,6 +1,6 @@
 import { listen } from '@tauri-apps/api/event';
 import { useAppStore } from '../store';
-import { TagsUpdatedEvent } from './contracts';
+import { TagsUpdatedEvent, ConnectionStatusEvent } from './contracts';
 
 let isListening = false;
 
@@ -15,6 +15,11 @@ export async function setupIpcListeners() {
       const { tags } = event.payload;
       // Update global store with the new tags
       useAppStore.getState().updateTags(tags);
+    });
+
+    await listen<ConnectionStatusEvent>('connection-status', (event) => {
+      const { connection_id, is_connected } = event.payload;
+      useAppStore.getState().updateConnectionStatus(connection_id, is_connected);
     });
 
     console.log('Tauri IPC listeners setup complete.');

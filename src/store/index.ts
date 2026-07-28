@@ -1,15 +1,76 @@
 import { create } from 'zustand';
-import { TagState } from '../core/contracts';
+import { TagState, WorkspaceSession } from '../core/contracts';
+
+export type WidgetType = 'value' | 'chart';
+
+export interface DashboardWidget {
+  id: string;
+  tag_id: string;
+  type: WidgetType;
+}
 
 interface AppState {
   tags: Record<string, TagState>;
+  workspace: WorkspaceSession | null;
+  connectionStatuses: Record<string, boolean>;
+  widgets: DashboardWidget[];
+  draggedTagId: string | null;
+
   updateTags: (newTags: Record<string, TagState>) => void;
+  setWorkspace: (workspace: WorkspaceSession) => void;
+  updateConnectionStatus: (connectionId: string, isConnected: boolean) => void;
+  addWidget: (tagId: string, type?: WidgetType) => void;
+  removeWidget: (widgetId: string) => void;
+  setDraggedTagId: (tagId: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   tags: {},
+  workspace: null,
+  connectionStatuses: {},
+  widgets: [],
+  draggedTagId: null,
+
   updateTags: (newTags) =>
     set((state) => ({
       tags: { ...state.tags, ...newTags },
+    })),
+
+  setWorkspace: (workspace) =>
+    set(() => ({
+      workspace,
+      // Reset connection statuses and dashboard when a new workspace is loaded
+      connectionStatuses: {},
+      widgets: [],
+    })),
+
+  updateConnectionStatus: (connectionId, isConnected) =>
+    set((state) => ({
+      connectionStatuses: {
+        ...state.connectionStatuses,
+        [connectionId]: isConnected,
+      },
+    })),
+
+  addWidget: (tagId, type = 'value') =>
+    set((state) => ({
+      widgets: [
+        ...state.widgets,
+        {
+          id: `widget_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          tag_id: tagId,
+          type,
+        },
+      ],
+    })),
+
+  removeWidget: (widgetId) =>
+    set((state) => ({
+      widgets: state.widgets.filter((w) => w.id !== widgetId),
+    })),
+
+  setDraggedTagId: (tagId) =>
+    set(() => ({
+      draggedTagId: tagId,
     })),
 }));

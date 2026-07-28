@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { TreeView } from './TreeView';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -13,12 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <span>Explorer</span>
         </div>
         <div className="app-sidebar-content">
-          {/* Tree view or project files go here */}
-          <div
-            style={{ padding: '0 1rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}
-          >
-            <p>No project open</p>
-          </div>
+          <TreeView />
         </div>
       </aside>
 

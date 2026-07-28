@@ -92,14 +92,36 @@ pub async fn run_data_hub_manager(
 ) {
     let mut flush_interval = interval(Duration::from_millis(ui_throttle_ms));
 
+    let emit_if_status = |msg: &HubMessage, app_handle: &Option<AppHandle>| {
+        if let HubMessage::ConnectionStatus {
+            connection_id,
+            is_connected,
+            error,
+        } = msg
+        {
+            if let Some(app) = app_handle {
+                let event = crate::protocol::ipc::ConnectionStatusEvent {
+                    connection_id: connection_id.clone(),
+                    is_connected: *is_connected,
+                    error: error.clone(),
+                };
+                if let Err(e) = app.emit("connection-status", event) {
+                    error!("Failed to emit connection-status event: {}", e);
+                }
+            }
+        }
+    };
+
     loop {
         tokio::select! {
             // Task 2.3: Batch draining using try_recv
             Some(msg) = receiver.recv() => {
+                emit_if_status(&msg, &app_handle);
                 hub.process_message(msg);
 
                 // Drain any other immediately available messages in the queue
                 while let Ok(msg) = receiver.try_recv() {
+                    emit_if_status(&msg, &app_handle);
                     hub.process_message(msg);
                 }
             }
