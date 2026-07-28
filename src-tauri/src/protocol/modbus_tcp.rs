@@ -7,7 +7,7 @@ use crate::core::error::Result;
 use crate::core::messages::{TagQuality, TagState, TagValue};
 use crate::workspace::session::DeviceInstance;
 
-pub struct ModbusRtuAdapter {
+pub struct ModbusTcpAdapter {
     devices: Vec<DeviceInstance>,
     current_device_idx: usize,
     inflight_device_idx: Option<usize>,
@@ -15,7 +15,7 @@ pub struct ModbusRtuAdapter {
     // so we know exactly what registers to poll. For now we poll a hardcoded range.
 }
 
-impl ModbusRtuAdapter {
+impl ModbusTcpAdapter {
     pub fn new(devices: Vec<DeviceInstance>) -> Self {
         Self {
             devices,
@@ -25,7 +25,7 @@ impl ModbusRtuAdapter {
     }
 }
 
-impl ProtocolAdapter for ModbusRtuAdapter {
+impl ProtocolAdapter for ModbusTcpAdapter {
     fn next_request(&mut self) -> Option<Vec<u8>> {
         if self.devices.is_empty() {
             return None;
@@ -33,9 +33,11 @@ impl ProtocolAdapter for ModbusRtuAdapter {
 
         let device = &self.devices[self.current_device_idx];
 
-        // Let's build a simple read holding registers request (Function 03)
-        // For demonstration, we read 10 registers starting at 0.
-        let mut request = ModbusRequest::new(device.slave_id, rmodbus::ModbusProto::Rtu);
+        // Build a simple read holding registers request (Function 03)
+        // Modbus TCP requires transaction ID. We use a static 1 for now, but in reality this should increment.
+        let mut request = ModbusRequest::new(device.slave_id, rmodbus::ModbusProto::TcpUdp);
+        request.tr_id = 1;
+
         let mut buf = Vec::new();
 
         match request.generate_get_holdings(0, 10, &mut buf) {
@@ -57,16 +59,12 @@ impl ProtocolAdapter for ModbusRtuAdapter {
 
         // To properly parse the response using rmodbus, we need to know the context (what we requested).
         // Since we requested 10 holding registers, we expect them back.
-        // For now, we will do a simple manual parse.
+        // For now, we will do a simple manual parse just to prove data flows.
 
-        // In a complete implementation, the adapter state machine would remember
-        // which device and registers it just requested, and parse the payload into specific TagStates
-        // based on the TagConfig of that DeviceProfile.
-
-        // Dummy implementation to satisfy the trait:
+        // Safe timestamp fallback
         let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(d) => d.as_millis() as u64,
-            Err(_) => 0, // Fallback safely if time goes backwards
+            Err(_) => 0,
         };
 
         let device_idx = self.inflight_device_idx.take().unwrap_or(0);
