@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tokio::sync::oneshot;
 
 /// Represents the actual parsed value of a tag.
 /// It uses 64-bit precision to cover all smaller integer and float types.
@@ -32,7 +33,7 @@ pub struct TagState {
 
 /// The central message contract used by all workers and plugins to communicate with the Data Hub.
 /// This enum strictly controls all state mutations in the system.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum HubMessage {
     /// Emitted by a Connection Worker (Producer) when a new value is successfully polled.
     UpdateTag {
@@ -56,4 +57,55 @@ pub enum HubMessage {
         tag_id: String,
         value: TagValue,
     },
+
+    /// Sent by the IPC layer to request the full history of a specific tag from the ring buffer.
+    /// The response is delivered via a oneshot channel to avoid blocking.
+    QueryHistory {
+        tag_id: String,
+        responder: oneshot::Sender<Vec<TagState>>,
+    },
+}
+
+/// Manual Clone implementation for HubMessage.
+/// QueryHistory contains a oneshot::Sender which is not Clone and must never be cloned —
+/// it is handled exclusively within process_message before any broadcast occurs.
+impl Clone for HubMessage {
+    fn clone(&self) -> Self {
+        match self {
+            HubMessage::UpdateTag {
+                connection_id,
+                device_id,
+                state,
+            } => HubMessage::UpdateTag {
+                connection_id: connection_id.clone(),
+                device_id: device_id.clone(),
+                state: state.clone(),
+            },
+            HubMessage::ConnectionStatus {
+                connection_id,
+                is_connected,
+                error,
+            } => HubMessage::ConnectionStatus {
+                connection_id: connection_id.clone(),
+                is_connected: *is_connected,
+                error: error.clone(),
+            },
+            HubMessage::WriteTag {
+                connection_id,
+                device_id,
+                tag_id,
+                value,
+            } => HubMessage::WriteTag {
+                connection_id: connection_id.clone(),
+                device_id: device_id.clone(),
+                tag_id: tag_id.clone(),
+                value: value.clone(),
+            },
+            HubMessage::QueryHistory { .. } => {
+                // oneshot::Sender is not Clone. This variant is consumed in process_message
+                // before any broadcast and must never reach this path.
+                unreachable!("QueryHistory must not be cloned")
+            }
+        }
+    }
 }

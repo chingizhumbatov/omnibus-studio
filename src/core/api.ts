@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { TagsUpdatedEvent, TagValue, WorkspaceSession } from './contracts';
+import { TagsUpdatedEvent, TagValue, TagState, WorkspaceSession } from './contracts';
 
 /**
  * Send a command to the Rust backend to write data to a specific tag.
@@ -31,6 +31,13 @@ export async function loadWorkspace(session: WorkspaceSession): Promise<void> {
  */
 export async function stopWorkspace(): Promise<void> {
   return invoke('stop_workspace');
+}
+
+/**
+ * Requests the full telemetry history for a specific tag from the Data Hub ring buffer.
+ */
+export async function getTagHistory(tagId: string): Promise<TagState[]> {
+  return invoke('get_tag_history', { tagId });
 }
 
 /**

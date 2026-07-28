@@ -4,12 +4,12 @@ pub mod protocol;
 pub mod state;
 pub mod workspace;
 
-use crate::core::messages::{HubMessage, TagValue};
+use crate::core::messages::{HubMessage, TagState, TagValue};
 use crate::workspace::session::WorkspaceSession;
 use state::AppState;
 use std::sync::Arc;
 use tauri::Manager;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::{mpsc, oneshot, Mutex};
 
 /// Запрос на запись значения в тег со стороны UI
 #[tauri::command]
@@ -56,6 +56,27 @@ async fn stop_workspace(state: tauri::State<'_, AppState>) -> Result<(), String>
     Ok(())
 }
 
+/// Request the full tag history snapshot from the Data Hub ring buffer.
+/// Uses a oneshot channel for the request-response pattern without shared state.
+#[tauri::command]
+async fn get_tag_history(
+    state: tauri::State<'_, AppState>,
+    tag_id: String,
+) -> Result<Vec<TagState>, String> {
+    let (tx, rx) = oneshot::channel();
+    state
+        .hub_sender
+        .send(HubMessage::QueryHistory {
+            tag_id,
+            responder: tx,
+        })
+        .await
+        .map_err(|e| format!("Failed to send QueryHistory to hub: {}", e))?;
+
+    rx.await
+        .map_err(|e| format!("DataHub did not respond to QueryHistory: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -84,7 +105,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             write_tag,
             load_workspace,
-            stop_workspace
+            stop_workspace,
+            get_tag_history
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -21,6 +21,7 @@ interface AppState {
   updateConnectionStatus: (connectionId: string, isConnected: boolean) => void;
   addWidget: (tagId: string, type?: WidgetType) => void;
   removeWidget: (widgetId: string) => void;
+  updateWidgetType: (widgetId: string, type: WidgetType) => void;
   setDraggedTagId: (tagId: string | null) => void;
 }
 
@@ -67,6 +68,11 @@ export const useAppStore = create<AppState>((set) => ({
   removeWidget: (widgetId) =>
     set((state) => ({
       widgets: state.widgets.filter((w) => w.id !== widgetId),
+    })),
+
+  updateWidgetType: (widgetId, type) =>
+    set((state) => ({
+      widgets: state.widgets.map((w) => (w.id === widgetId ? { ...w, type } : w)),
     })),
 
   setDraggedTagId: (tagId) =>

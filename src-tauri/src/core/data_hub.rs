@@ -44,29 +44,46 @@ impl DataHub {
     }
 
     pub fn process_message(&mut self, msg: HubMessage) {
-        // Task 3.2: Broadcast to any listening plugins (ignore if no receivers)
-        let _ = self.event_bus.send(msg.clone());
-
         match msg {
-            HubMessage::UpdateTag { state, .. } => {
+            HubMessage::UpdateTag { ref state, .. } => {
+                // Broadcast to any listening plugins (ignore if no receivers)
+                let _ = self.event_bus.send(msg.clone());
+
                 let tag_id = state.tag_id.clone();
                 let history = self.tag_history.entry(tag_id.clone()).or_default();
 
                 if history.len() >= RING_BUFFER_SIZE {
                     history.pop_front();
                 }
-                history.push_back(state);
+                history.push_back(state.clone());
                 self.dirty_tags.insert(tag_id);
             }
             HubMessage::ConnectionStatus {
-                connection_id,
+                ref connection_id,
                 is_connected,
-                error: _,
+                ..
             } => {
-                self.port_statuses.insert(connection_id, is_connected);
+                // Broadcast to any listening plugins (ignore if no receivers)
+                let _ = self.event_bus.send(msg.clone());
+                self.port_statuses
+                    .insert(connection_id.clone(), is_connected);
             }
             HubMessage::WriteTag { .. } => {
+                // Broadcast to any listening plugins (ignore if no receivers)
+                let _ = self.event_bus.send(msg.clone());
                 warn!("WriteTag received in DataHub but not implemented yet to route to worker");
+            }
+            HubMessage::QueryHistory { tag_id, responder } => {
+                // Do NOT broadcast this — oneshot::Sender is not Clone.
+                // Respond directly with the full history snapshot.
+                let history: Vec<TagState> = self
+                    .tag_history
+                    .get(&tag_id)
+                    .map(|deque| deque.iter().cloned().collect())
+                    .unwrap_or_default();
+
+                // Ignore send error — the caller may have timed out.
+                let _ = responder.send(history);
             }
         }
     }
