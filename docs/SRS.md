@@ -89,6 +89,11 @@ To prevent virtual DOM thread starvation on the React frontend during high-frequ
 * **Configurable Throttled Emission**: A background timer (configurable per session, e.g., every 100ms) flushes accumulated changes, packing them into a single unified JSON payload dispatched via Tauri Events (`app.emit`).
 * **Binary IPC for Heavy Payloads**: While standard tag updates use JSON batched events, requests for massive payloads (e.g., Raw byte arrays representing oscillograms) utilize Tauri v2's native `tauri::ipc::Response`. This allows the Rust backend to send raw `ArrayBuffer` directly to the JavaScript V8 engine, entirely bypassing expensive JSON serialization.
 
+### 7.3 Protocol Polling Optimization & Endianness
+To maximize throughput and prevent hardware faults (such as Modbus timeouts on unmapped registers), the Protocol Adapters implement intelligent request grouping and robust byte handling:
+* **Smart Chunking**: Instead of sending a separate network request per tag, adapters sort tags by address and group them into contiguous "chunks". The adapter splits a chunk into multiple requests if it detects a gap (empty registers) or a different register type, guaranteeing that the system never queries unmapped hardware memory that could cause an `Illegal Data Address` exception.
+* **Endianness Engine**: Industrial protocols like Modbus define 16-bit word transmission (Big-Endian) but lack standards for 32/64-bit numbers. The Rust Payload Decoder natively supports Byte/Word Swapping (`ABCD`, `CDAB`, `BADC`, `DCBA`) with `ABCD` (Standard Big-Endian) serving as the default, ensuring correct floating-point and large integer extraction across all manufacturer anomalies.
+
 ## 8. Plugin & Extension Architecture
 
 To satisfy the requirements of a truly universal client, the core implements a rigorous, decoupled plugin system. 
