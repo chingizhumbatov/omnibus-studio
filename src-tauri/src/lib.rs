@@ -4,7 +4,7 @@ pub mod protocol;
 pub mod state;
 pub mod workspace;
 
-use crate::core::messages::HubMessage;
+use crate::core::messages::{HubMessage, TagValue};
 use state::AppState;
 use tauri::Manager;
 use tokio::sync::mpsc;
@@ -13,14 +13,18 @@ use tokio::sync::mpsc;
 #[tauri::command]
 async fn write_tag(
     state: tauri::State<'_, AppState>,
+    connection_id: String,
+    device_id: String,
     tag_id: String,
-    payload: Vec<u8>,
+    value: TagValue,
 ) -> Result<(), String> {
     state
         .hub_sender
-        .send(HubMessage::UpdateTag {
+        .send(HubMessage::WriteTag {
+            connection_id,
+            device_id,
             tag_id,
-            raw_payload: payload,
+            value,
         })
         .await
         .map_err(|e| format!("Failed to send to hub: {}", e))?;
@@ -34,14 +38,12 @@ pub fn run() {
         .setup(|app| {
             let (tx, rx) = mpsc::channel(1024);
 
-            // Register State
             app.manage(AppState { hub_sender: tx });
-
             let app_handle = app.handle().clone();
 
-            // Spawn the Data Hub Manager task
             tauri::async_runtime::spawn(async move {
-                crate::core::data_hub::run_data_hub_manager(rx, app_handle).await;
+                // TODO: Load this from WorkspaceSession configuration
+                crate::core::data_hub::run_data_hub_manager(rx, app_handle, 100).await;
             });
 
             Ok(())
