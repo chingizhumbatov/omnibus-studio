@@ -10,15 +10,16 @@ use crate::workspace::session::{ConnectionConfig, WorkspaceSession};
 
 use crate::protocol::mock::MockProtocolWorker;
 use crate::protocol::modbus_rtu::ModbusRtuAdapter;
+use crate::protocol::modbus_tcp::ModbusTcpAdapter;
 use crate::protocol::serial::SerialProtocolWorker;
+use crate::protocol::tcp::TcpProtocolWorker;
 
 /// Wrapper enum to bypass the lack of dynamic dispatch (dyn compatibility)
 /// for traits with native async functions in Rust 1.75.
 pub enum ActiveWorker {
     Mock(MockProtocolWorker),
     Serial(SerialProtocolWorker),
-    // Future plugins:
-    // Tcp(TcpProtocolWorker),
+    Tcp(TcpProtocolWorker),
 }
 
 impl ActiveWorker {
@@ -26,6 +27,7 @@ impl ActiveWorker {
         match self {
             ActiveWorker::Mock(w) => w.start(config, context).await,
             ActiveWorker::Serial(w) => w.start(config, context).await,
+            ActiveWorker::Tcp(w) => w.start(config, context).await,
         }
     }
 
@@ -33,6 +35,7 @@ impl ActiveWorker {
         match self {
             ActiveWorker::Mock(w) => w.stop().await,
             ActiveWorker::Serial(w) => w.stop().await,
+            ActiveWorker::Tcp(w) => w.stop().await,
         }
     }
 }
@@ -73,10 +76,11 @@ impl PluginRegistry {
                 }
                 crate::workspace::session::ConnectionType::Tcp { .. } => {
                     info!(
-                        "Instantiating MockProtocolWorker (fallback) for TCP connection: {}",
+                        "Instantiating TcpProtocolWorker for TCP connection: {}",
                         config.connection_id
                     );
-                    ActiveWorker::Mock(MockProtocolWorker::new())
+                    let adapter = ModbusTcpAdapter::new(config.devices.clone());
+                    ActiveWorker::Tcp(TcpProtocolWorker::new(Box::new(adapter)))
                 }
             };
 
@@ -140,7 +144,7 @@ mod tests {
         registry.load_workspace(&session).await.unwrap();
         assert_eq!(registry.workers.len(), 1);
 
-        // Check if the mock worker sent the connected status
+        // Check if the worker sent the connected status (it should fail to connect to port 5020)
         if let Some(HubMessage::ConnectionStatus {
             connection_id,
             is_connected,
@@ -148,7 +152,7 @@ mod tests {
         }) = hub_rx.recv().await
         {
             assert_eq!(connection_id, "conn_1");
-            assert!(is_connected);
+            assert!(!is_connected);
         } else {
             panic!("Expected ConnectionStatus message");
         }
