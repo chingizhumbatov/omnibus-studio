@@ -2,18 +2,31 @@
  * Data contracts for IPC communication with the Rust Data Hub.
  *
  * IMPORTANT: These must be kept strictly in sync with the Rust structs
- * defined in `src-tauri/src/protocol/ipc.rs`.
+ * defined in `src-tauri/src/core/messages.rs` and `ipc.rs`.
  */
 
-export interface TagsUpdatedEvent {
-  /**
-   * Record mapping Tag ID to its raw byte payload.
-   * Rust's `Vec<u8>` is serialized as `number[]` in JSON for Tauri.
-   */
-  tags: Record<string, number[]>;
+export type TagValue =
+  | { type: 'Integer'; value: number }
+  | { type: 'Float'; value: number }
+  | { type: 'String'; value: string }
+  | { type: 'Raw'; value: number[] };
+
+export type TagQuality =
+  { status: 'Good' } | { status: 'Bad'; reason: string } | { status: 'Unknown' };
+
+export interface TagState {
+  tag_id: string;
+  value: TagValue;
+  quality: TagQuality;
+  timestamp_ms: number;
 }
 
-export interface DeviceFaultEvent {
-  device_id: string;
-  error_code: number;
+export interface TagsUpdatedEvent {
+  tags: Record<string, TagState>;
+}
+
+export interface ConnectionStatusEvent {
+  connection_id: string;
+  is_connected: boolean;
+  error?: string;
 }
