@@ -17,7 +17,7 @@ function App() {
       connections: [
         {
           connection_id: 'mock_demo',
-          connection_type: { type: 'Tcp', ip: '127.0.0.1', port: 502 } satisfies ConnectionType,
+          connection_type: { type: 'Mock' } as ConnectionType,
           polling_interval_ms: 100,
           devices: [
             {
@@ -25,6 +25,39 @@ function App() {
               profile_id: 'mock_profile',
               connection_id: 'mock_demo',
               slave_id: 1,
+            },
+          ],
+        },
+      ],
+      profiles: [
+        {
+          profile_id: 'mock_profile',
+          name: 'Demo Sensor Pack',
+          tags: [
+            {
+              tag_id: 'dev_1_reg_0',
+              name: 'Temperature',
+              unit: '°C',
+              register_type: 'Holding',
+              address: 0,
+              data_type: 'Float32',
+              byte_order: 'ABCD',
+            },
+            {
+              tag_id: 'dev_1_reg_2',
+              name: 'Pressure',
+              unit: 'bar',
+              register_type: 'Holding',
+              address: 2,
+              data_type: 'Float32',
+              byte_order: 'CDAB',
+            },
+            {
+              tag_id: 'dev_1_reg_4',
+              name: 'Status',
+              register_type: 'Holding',
+              address: 4,
+              data_type: 'Int16',
             },
           ],
         },

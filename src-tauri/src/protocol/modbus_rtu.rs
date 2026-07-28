@@ -1,49 +1,165 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use rmodbus::client::ModbusRequest;
 
 use super::parser::ProtocolAdapter;
-use crate::core::error::Result;
-use crate::core::messages::{TagQuality, TagState, TagValue};
-use crate::workspace::session::DeviceInstance;
+use crate::core::decoder::PayloadDecoder;
+use crate::core::error::{CoreError, Result};
+use crate::core::messages::TagState;
+use crate::workspace::session::{DeviceInstance, DeviceProfile, RegisterType, TagConfig};
+
+#[derive(Clone)]
+pub struct PollChunk {
+    pub instance_id: String,
+    pub slave_id: u8,
+    pub register_type: RegisterType,
+    pub start_address: u16,
+    pub quantity: u16,
+    pub tags: Vec<TagConfig>,
+}
 
 pub struct ModbusRtuAdapter {
-    devices: Vec<DeviceInstance>,
-    current_device_idx: usize,
-    inflight_device_idx: Option<usize>,
-    // Note: We would ideally store the TagConfig from the profile here
-    // so we know exactly what registers to poll. For now we poll a hardcoded range.
+    chunks: Vec<PollChunk>,
+    current_chunk_idx: usize,
+    inflight_chunk: Option<PollChunk>,
 }
 
 impl ModbusRtuAdapter {
-    pub fn new(devices: Vec<DeviceInstance>) -> Self {
+    pub fn new(devices: Vec<(DeviceInstance, DeviceProfile)>) -> Self {
+        let mut chunks = Vec::new();
+
+        for (instance, profile) in devices {
+            // Group tags by RegisterType
+            let mut holding_tags = Vec::new();
+            let mut input_tags = Vec::new();
+            let mut coil_tags = Vec::new();
+            let mut discrete_tags = Vec::new();
+
+            for tag in profile.tags {
+                match tag.register_type {
+                    RegisterType::Holding => holding_tags.push(tag),
+                    RegisterType::Input => input_tags.push(tag),
+                    RegisterType::Coil => coil_tags.push(tag),
+                    RegisterType::Discrete => discrete_tags.push(tag),
+                }
+            }
+
+            Self::build_chunks_for_type(
+                &mut chunks,
+                &instance,
+                RegisterType::Holding,
+                holding_tags,
+            );
+            Self::build_chunks_for_type(&mut chunks, &instance, RegisterType::Input, input_tags);
+            Self::build_chunks_for_type(&mut chunks, &instance, RegisterType::Coil, coil_tags);
+            Self::build_chunks_for_type(
+                &mut chunks,
+                &instance,
+                RegisterType::Discrete,
+                discrete_tags,
+            );
+        }
+
         Self {
-            devices,
-            current_device_idx: 0,
-            inflight_device_idx: None,
+            chunks,
+            current_chunk_idx: 0,
+            inflight_chunk: None,
+        }
+    }
+
+    fn build_chunks_for_type(
+        chunks: &mut Vec<PollChunk>,
+        instance: &DeviceInstance,
+        reg_type: RegisterType,
+        mut tags: Vec<TagConfig>,
+    ) {
+        if tags.is_empty() {
+            return;
+        }
+
+        // Sort by address
+        tags.sort_by_key(|t| t.address);
+
+        let mut current_tags = Vec::new();
+        let mut start_addr = tags[0].address;
+        let mut expected_next_addr = start_addr;
+
+        for tag in tags {
+            if tag.address > expected_next_addr {
+                // Finalize current chunk
+                let quantity = expected_next_addr - start_addr;
+                chunks.push(PollChunk {
+                    instance_id: instance.instance_id.clone(),
+                    slave_id: instance.slave_id,
+                    register_type: reg_type,
+                    start_address: start_addr,
+                    quantity: quantity.max(1),
+                    tags: current_tags.clone(),
+                });
+
+                // Start new chunk
+                current_tags.clear();
+                start_addr = tag.address;
+            }
+
+            current_tags.push(tag.clone());
+
+            let registers = match tag.data_type {
+                crate::workspace::session::DataType::Bool => 1,
+                crate::workspace::session::DataType::Int16
+                | crate::workspace::session::DataType::Uint16 => 1,
+                crate::workspace::session::DataType::Int32
+                | crate::workspace::session::DataType::Uint32
+                | crate::workspace::session::DataType::Float32 => 2,
+                crate::workspace::session::DataType::Float64 => 4,
+                crate::workspace::session::DataType::Raw => 1,
+            };
+            expected_next_addr = tag.address + registers;
+        }
+
+        // Finalize the last chunk
+        if !current_tags.is_empty() {
+            let quantity = expected_next_addr - start_addr;
+            chunks.push(PollChunk {
+                instance_id: instance.instance_id.clone(),
+                slave_id: instance.slave_id,
+                register_type: reg_type,
+                start_address: start_addr,
+                quantity: quantity.max(1),
+                tags: current_tags,
+            });
         }
     }
 }
 
 impl ProtocolAdapter for ModbusRtuAdapter {
     fn next_request(&mut self) -> Option<Vec<u8>> {
-        if self.devices.is_empty() {
+        if self.chunks.is_empty() {
             return None;
         }
 
-        let device = &self.devices[self.current_device_idx];
+        let chunk = self.chunks[self.current_chunk_idx].clone();
 
-        // Let's build a simple read holding registers request (Function 03)
-        // For demonstration, we read 10 registers starting at 0.
-        let mut request = ModbusRequest::new(device.slave_id, rmodbus::ModbusProto::Rtu);
+        let mut request = ModbusRequest::new(chunk.slave_id, rmodbus::ModbusProto::Rtu);
+
         let mut buf = Vec::new();
+        let res = match chunk.register_type {
+            RegisterType::Holding => {
+                request.generate_get_holdings(chunk.start_address, chunk.quantity, &mut buf)
+            }
+            RegisterType::Input => {
+                request.generate_get_inputs(chunk.start_address, chunk.quantity, &mut buf)
+            }
+            RegisterType::Coil => {
+                request.generate_get_coils(chunk.start_address, chunk.quantity, &mut buf)
+            }
+            RegisterType::Discrete => {
+                request.generate_get_discretes(chunk.start_address, chunk.quantity, &mut buf)
+            }
+        };
 
-        match request.generate_get_holdings(0, 10, &mut buf) {
+        match res {
             Ok(_) => {
-                // Record which device this request is for so we can parse its response
-                self.inflight_device_idx = Some(self.current_device_idx);
-                // Move to the next device for the next poll
-                self.current_device_idx = (self.current_device_idx + 1) % self.devices.len();
+                self.inflight_chunk = Some(chunk);
+                self.current_chunk_idx = (self.current_chunk_idx + 1) % self.chunks.len();
                 Some(buf)
             }
             Err(_) => None,
@@ -55,35 +171,42 @@ impl ProtocolAdapter for ModbusRtuAdapter {
             return Ok(vec![]);
         }
 
-        // To properly parse the response using rmodbus, we need to know the context (what we requested).
-        // Since we requested 10 holding registers, we expect them back.
-        // For now, we will do a simple manual parse.
-
-        // In a complete implementation, the adapter state machine would remember
-        // which device and registers it just requested, and parse the payload into specific TagStates
-        // based on the TagConfig of that DeviceProfile.
-
-        // Dummy implementation to satisfy the trait:
-        let timestamp = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(d) => d.as_millis() as u64,
-            Err(_) => 0, // Fallback safely if time goes backwards
+        let chunk = match self.inflight_chunk.take() {
+            Some(c) => c,
+            None => {
+                return Err(CoreError::ParsingError(
+                    "No inflight chunk to map response".into(),
+                ))
+            }
         };
 
-        let device_idx = self.inflight_device_idx.take().unwrap_or(0);
-        let device_id = self
-            .devices
-            .get(device_idx)
-            .map(|d| d.instance_id.clone())
-            .unwrap_or_else(|| "unknown".to_string());
+        let mut parsed_states = Vec::new();
 
-        Ok(vec![(
-            device_id.clone(),
-            TagState {
-                tag_id: format!("{}_reg_0", device_id),
-                value: TagValue::Integer(payload.len() as i64),
-                quality: TagQuality::Good,
-                timestamp_ms: timestamp,
-            },
-        )])
+        // Modbus RTU Data starts at byte 3 (Slave ID(1), Function Code(1), Byte Count(1)).
+        if payload.len() < 3 {
+            return Err(CoreError::ParsingError(
+                "Payload too short for Modbus RTU".into(),
+            ));
+        }
+
+        let data_bytes = &payload[3..];
+
+        for tag in &chunk.tags {
+            match PayloadDecoder::parse_tag(
+                &chunk.instance_id,
+                tag,
+                data_bytes,
+                chunk.start_address,
+            ) {
+                Ok(state) => {
+                    parsed_states.push((chunk.instance_id.clone(), state));
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to parse tag {}: {}", tag.tag_id, e);
+                }
+            }
+        }
+
+        Ok(parsed_states)
     }
 }

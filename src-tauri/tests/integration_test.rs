@@ -15,12 +15,29 @@ async fn test_headless_integration_mock_worker() {
         ui_throttle_ms: 100, // Not strictly used by this headless test since we observe the raw bus
         connections: vec![ConnectionConfig {
             connection_id: "mock_conn_1".to_string(),
-            connection_type: ConnectionType::Tcp {
-                ip: "127.0.0.1".to_string(),
-                port: 5020,
-            }, // We use Tcp variant as a fallback that instantiates Mock in plugin_registry.rs
+            connection_type: ConnectionType::Mock, // We use Mock variant to spawn MockProtocolWorker
             polling_interval_ms: 50,
-            devices: vec![],
+            devices: vec![tauri_app_lib::workspace::session::DeviceInstance {
+                instance_id: "mock_device_1".to_string(),
+                profile_id: "mock_profile_1".to_string(),
+                connection_id: "mock_conn_1".to_string(),
+                slave_id: 1,
+            }],
+        }],
+        profiles: vec![tauri_app_lib::workspace::session::DeviceProfile {
+            profile_id: "mock_profile_1".to_string(),
+            name: "Mock Profile".to_string(),
+            tags: vec![tauri_app_lib::workspace::session::TagConfig {
+                tag_id: "mock_conn_1_mock_tag_1".to_string(),
+                name: None,
+                unit: None,
+                register_type: tauri_app_lib::workspace::session::RegisterType::Holding,
+                address: 0,
+                bit_offset: None,
+                data_type: tauri_app_lib::workspace::session::DataType::Float32,
+                byte_order: None,
+                scale: None,
+            }],
         }],
     };
 

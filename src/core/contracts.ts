@@ -40,7 +40,8 @@ export type ConnectionType =
       parity: string;
       stop_bits: number;
     }
-  | { type: 'Tcp'; ip: string; port: number };
+  | { type: 'Tcp'; ip: string; port: number }
+  | { type: 'Mock' };
 
 export interface DeviceInstance {
   instance_id: string;
@@ -56,8 +57,34 @@ export interface ConnectionConfig {
   devices: DeviceInstance[];
 }
 
+export type ByteOrder = 'ABCD' | 'CDAB' | 'BADC' | 'DCBA';
+
+export type DataType =
+  'Bool' | 'Int16' | 'Uint16' | 'Int32' | 'Uint32' | 'Float32' | 'Float64' | 'Raw';
+
+export type RegisterType = 'Holding' | 'Input' | 'Coil' | 'Discrete';
+
+export interface TagConfig {
+  tag_id: string;
+  name?: string | null;
+  unit?: string | null;
+  register_type: RegisterType;
+  address: number;
+  bit_offset?: number | null;
+  data_type: DataType;
+  byte_order?: ByteOrder | null;
+  scale?: number | null;
+}
+
+export interface DeviceProfile {
+  profile_id: string;
+  name: string;
+  tags: TagConfig[];
+}
+
 export interface WorkspaceSession {
   session_id: string;
   ui_throttle_ms: number;
   connections: ConnectionConfig[];
+  profiles: DeviceProfile[];
 }

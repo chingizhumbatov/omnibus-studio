@@ -65,13 +65,30 @@ impl PluginRegistry {
         self.stop_all().await?;
 
         for config in &session.connections {
+            // Resolve profiles for all devices on this connection
+            let mut resolved_devices = Vec::new();
+            for device in &config.devices {
+                if let Some(profile) = session
+                    .profiles
+                    .iter()
+                    .find(|p| p.profile_id == device.profile_id)
+                {
+                    resolved_devices.push((device.clone(), profile.clone()));
+                } else {
+                    warn!(
+                        "Profile {} not found for device {}",
+                        device.profile_id, device.instance_id
+                    );
+                }
+            }
+
             let mut worker = match config.connection_type {
                 crate::workspace::session::ConnectionType::Serial { .. } => {
                     info!(
                         "Instantiating SerialProtocolWorker for connection: {}",
                         config.connection_id
                     );
-                    let adapter = ModbusRtuAdapter::new(config.devices.clone());
+                    let adapter = ModbusRtuAdapter::new(resolved_devices);
                     ActiveWorker::Serial(SerialProtocolWorker::new(Box::new(adapter)))
                 }
                 crate::workspace::session::ConnectionType::Tcp { .. } => {
@@ -79,8 +96,15 @@ impl PluginRegistry {
                         "Instantiating TcpProtocolWorker for TCP connection: {}",
                         config.connection_id
                     );
-                    let adapter = ModbusTcpAdapter::new(config.devices.clone());
+                    let adapter = ModbusTcpAdapter::new(resolved_devices);
                     ActiveWorker::Tcp(TcpProtocolWorker::new(Box::new(adapter)))
+                }
+                crate::workspace::session::ConnectionType::Mock => {
+                    info!(
+                        "Instantiating MockProtocolWorker for Mock connection: {}",
+                        config.connection_id
+                    );
+                    ActiveWorker::Mock(MockProtocolWorker::new(resolved_devices))
                 }
             };
 
@@ -138,6 +162,7 @@ mod tests {
                 polling_interval_ms: 10,
                 devices: vec![],
             }],
+            profiles: vec![],
         };
 
         // Test starting

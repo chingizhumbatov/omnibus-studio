@@ -15,6 +15,7 @@ pub enum ConnectionType {
         ip: String,
         port: u16,
     },
+    Mock,
 }
 
 /// A configuration for an active hardware connection worker.
@@ -45,6 +46,65 @@ pub struct WorkspaceSession {
     pub ui_throttle_ms: u64,
 
     pub connections: Vec<ConnectionConfig>,
+    pub profiles: Vec<DeviceProfile>,
+}
+
+/// The order of bytes for 32-bit and 64-bit values.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Default)]
+pub enum ByteOrder {
+    /// Big-Endian (Standard Modbus)
+    #[default]
+    ABCD,
+    /// Word Swap (Mid-Little Endian)
+    CDAB,
+    /// Byte Swap
+    BADC,
+    /// Little-Endian
+    DCBA,
+}
+
+/// The type of data stored in the register.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub enum DataType {
+    Bool,
+    Int16,
+    Uint16,
+    Int32,
+    Uint32,
+    Float32,
+    Float64,
+    Raw,
+}
+
+/// The type of Modbus register.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub enum RegisterType {
+    Holding,
+    Input,
+    Coil,
+    Discrete,
+}
+
+/// Configuration for a specific tag (register) in a device profile.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TagConfig {
+    pub tag_id: String,
+    pub name: Option<String>,
+    pub unit: Option<String>,
+    pub register_type: RegisterType,
+    pub address: u16,
+    pub bit_offset: Option<u8>,
+    pub data_type: DataType,
+    pub byte_order: Option<ByteOrder>,
+    pub scale: Option<f64>,
+}
+
+/// A reusable template describing a device's memory map.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeviceProfile {
+    pub profile_id: String,
+    pub name: String,
+    pub tags: Vec<TagConfig>,
 }
 
 #[cfg(test)]
@@ -84,6 +144,7 @@ mod tests {
                     devices: vec![],
                 },
             ],
+            profiles: vec![],
         };
 
         let json = serde_json::to_string_pretty(&session).unwrap();

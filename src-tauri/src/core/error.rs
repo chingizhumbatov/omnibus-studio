@@ -22,6 +22,9 @@ pub enum CoreError {
 
     #[error("Invalid request: {0}")]
     InvalidRequest(String),
+
+    #[error("Parsing error: {0}")]
+    ParsingError(String),
 }
 
 // Allows CoreError to be returned directly from Tauri Commands (Invoke) to the Frontend.

@@ -7,23 +7,21 @@ use super::connection::ConnectionWorker;
 use super::context::CommandContext;
 use crate::core::error::Result;
 use crate::core::messages::{HubMessage, TagQuality, TagState, TagValue};
-use crate::workspace::session::ConnectionConfig;
+use crate::workspace::session::{ConnectionConfig, DataType, DeviceInstance, DeviceProfile};
 
 /// A mock protocol worker for testing.
 /// Generates synthetic data (e.g., sine waves) when no hardware is attached.
 pub struct MockProtocolWorker {
     task_handle: Option<JoinHandle<()>>,
+    devices: Vec<(DeviceInstance, DeviceProfile)>,
 }
 
 impl MockProtocolWorker {
-    pub fn new() -> Self {
-        Self { task_handle: None }
-    }
-}
-
-impl Default for MockProtocolWorker {
-    fn default() -> Self {
-        Self::new()
+    pub fn new(devices: Vec<(DeviceInstance, DeviceProfile)>) -> Self {
+        Self {
+            task_handle: None,
+            devices,
+        }
     }
 }
 
@@ -45,33 +43,54 @@ impl ConnectionWorker for MockProtocolWorker {
         let polling_interval = Duration::from_millis(config.polling_interval_ms);
         let ctx = context.clone();
 
+        let devices_clone = self.devices.clone();
+
         let handle = tokio::spawn(async move {
             let mut counter = 0;
             loop {
                 sleep(polling_interval).await;
 
-                // Generate some dummy data (sine wave)
-                let val = (counter as f32 * 0.1).sin() * 100.0;
+                let timestamp_ms = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64;
 
-                let state = TagState {
-                    tag_id: format!("{}_mock_tag_1", ctx.connection_id),
-                    value: TagValue::Float(val as f64),
-                    quality: TagQuality::Good,
-                    timestamp_ms: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_millis() as u64,
-                };
+                for (instance, profile) in &devices_clone {
+                    for tag in &profile.tags {
+                        let val = match tag.data_type {
+                            DataType::Float32 | DataType::Float64 => {
+                                // Sine wave
+                                TagValue::Float(
+                                    ((counter as f64 + tag.address as f64) * 0.1).sin() * 100.0,
+                                )
+                            }
+                            DataType::Bool => {
+                                TagValue::Integer(if counter % 2 == 0 { 1 } else { 0 })
+                            }
+                            _ => {
+                                // Linear increment
+                                TagValue::Integer((counter + tag.address as i32) as i64 % 100)
+                            }
+                        };
 
-                let msg = HubMessage::UpdateTag {
-                    connection_id: ctx.connection_id.clone(),
-                    device_id: "mock_device".to_string(),
-                    state,
-                };
+                        let state = TagState {
+                            tag_id: tag.tag_id.clone(),
+                            value: val,
+                            quality: TagQuality::Good,
+                            timestamp_ms,
+                        };
 
-                if let Err(e) = ctx.send_to_hub(msg).await {
-                    warn!("MockProtocolWorker failed to send data to hub: {}", e);
-                    break;
+                        let msg = HubMessage::UpdateTag {
+                            connection_id: ctx.connection_id.clone(),
+                            device_id: instance.instance_id.clone(),
+                            state,
+                        };
+
+                        if let Err(e) = ctx.send_to_hub(msg).await {
+                            warn!("MockProtocolWorker failed to send data to hub: {}", e);
+                            break;
+                        }
+                    }
                 }
 
                 counter += 1;
