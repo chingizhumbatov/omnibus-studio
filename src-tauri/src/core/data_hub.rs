@@ -85,11 +85,11 @@ impl DataHub {
 }
 
 pub async fn run_data_hub_manager(
+    mut hub: DataHub,
     mut receiver: mpsc::Receiver<HubMessage>,
-    app_handle: AppHandle,
+    app_handle: Option<AppHandle>,
     ui_throttle_ms: u64,
 ) {
-    let mut hub = DataHub::new();
     let mut flush_interval = interval(Duration::from_millis(ui_throttle_ms));
 
     loop {
@@ -107,9 +107,11 @@ pub async fn run_data_hub_manager(
             _ = flush_interval.tick() => {
                 let tags = hub.flush_dirty_tags();
                 if !tags.is_empty() {
-                    let event = TagsUpdatedEvent { tags };
-                    if let Err(e) = app_handle.emit("tags-updated", event) {
-                        error!("Failed to emit tags-updated event: {}", e);
+                    if let Some(app) = &app_handle {
+                        let event = TagsUpdatedEvent { tags };
+                        if let Err(e) = app.emit("tags-updated", event) {
+                            error!("Failed to emit tags-updated event: {}", e);
+                        }
                     }
                 }
             }

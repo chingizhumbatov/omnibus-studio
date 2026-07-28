@@ -42,8 +42,8 @@ pub fn run() {
             let app_handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
-                // TODO: Load this from WorkspaceSession configuration
-                crate::core::data_hub::run_data_hub_manager(rx, app_handle, 100).await;
+                let hub = crate::core::data_hub::DataHub::new();
+                crate::core::data_hub::run_data_hub_manager(hub, rx, Some(app_handle), 100).await;
             });
 
             Ok(())
