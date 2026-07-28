@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { TagsUpdatedEvent, TagValue } from './contracts';
+import { TagsUpdatedEvent, TagValue, WorkspaceSession } from './contracts';
 
 /**
  * Send a command to the Rust backend to write data to a specific tag.
@@ -17,6 +17,20 @@ export async function writeTag(
     tagId,
     value,
   });
+}
+
+/**
+ * Loads a workspace session into the Rust backend, starting all configured connections.
+ */
+export async function loadWorkspace(session: WorkspaceSession): Promise<void> {
+  return invoke('load_workspace', { session });
+}
+
+/**
+ * Stops all active workspace connections in the Rust backend.
+ */
+export async function stopWorkspace(): Promise<void> {
+  return invoke('stop_workspace');
 }
 
 /**

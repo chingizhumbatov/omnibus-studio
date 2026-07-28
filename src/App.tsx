@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AppLayout } from './components/layout/AppLayout';
 import { setupIpcListeners } from './core/tauri-ipc';
+import { loadWorkspace } from './core/api';
 import { useAppStore } from './store';
 
 function App() {
@@ -8,6 +9,20 @@ function App() {
 
   useEffect(() => {
     setupIpcListeners();
+
+    // Start a mock workspace session for demonstration
+    loadWorkspace({
+      session_id: 'demo_session',
+      ui_throttle_ms: 100,
+      connections: [
+        {
+          connection_id: 'mock_demo',
+          connection_type: { type: 'Tcp', ip: '127.0.0.1', port: 502 },
+          polling_interval_ms: 100,
+          devices: [],
+        },
+      ],
+    }).catch((err) => console.error('Failed to load workspace:', err));
   }, []);
 
   return (

@@ -30,3 +30,34 @@ export interface ConnectionStatusEvent {
   is_connected: boolean;
   error?: string;
 }
+
+export type ConnectionType =
+  | {
+      type: 'Serial';
+      port: string;
+      baud_rate: number;
+      data_bits: number;
+      parity: string;
+      stop_bits: number;
+    }
+  | { type: 'Tcp'; ip: string; port: number };
+
+export interface DeviceInstance {
+  instance_id: string;
+  profile_id: string;
+  connection_id: string;
+  slave_id: number;
+}
+
+export interface ConnectionConfig {
+  connection_id: string;
+  connection_type: ConnectionType;
+  polling_interval_ms: number;
+  devices: DeviceInstance[];
+}
+
+export interface WorkspaceSession {
+  session_id: string;
+  ui_throttle_ms: number;
+  connections: ConnectionConfig[];
+}
