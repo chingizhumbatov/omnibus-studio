@@ -56,6 +56,28 @@ async fn stop_workspace(state: tauri::State<'_, AppState>) -> Result<(), String>
     Ok(())
 }
 
+#[tauri::command]
+async fn save_session(app: tauri::AppHandle, session: WorkspaceSession) -> Result<(), String> {
+    let manager = crate::workspace::manager::WorkspaceManager::new(&app);
+    manager.save_session(&session).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn load_session(
+    app: tauri::AppHandle,
+    session_id: String,
+) -> Result<WorkspaceSession, String> {
+    let manager = crate::workspace::manager::WorkspaceManager::new(&app);
+    manager.load_session(&session_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn list_sessions(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    let manager = crate::workspace::manager::WorkspaceManager::new(&app);
+    manager.list_sessions().map_err(|e| e.to_string())
+}
+
 /// Request the full tag history snapshot from the Data Hub ring buffer.
 /// Uses a oneshot channel for the request-response pattern without shared state.
 #[tauri::command]
@@ -106,7 +128,10 @@ pub fn run() {
             write_tag,
             load_workspace,
             stop_workspace,
-            get_tag_history
+            get_tag_history,
+            save_session,
+            load_session,
+            list_sessions
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

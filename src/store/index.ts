@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { TagState, WorkspaceSession } from '../core/contracts';
 
 export type WidgetType = 'value' | 'chart';
+export type AppView = 'dashboard' | 'configurator';
 
 export interface DashboardWidget {
   id: string;
@@ -10,12 +11,14 @@ export interface DashboardWidget {
 }
 
 interface AppState {
+  currentView: AppView;
   tags: Record<string, TagState>;
   workspace: WorkspaceSession | null;
   connectionStatuses: Record<string, boolean>;
   widgets: DashboardWidget[];
   draggedTagId: string | null;
 
+  setCurrentView: (view: AppView) => void;
   updateTags: (newTags: Record<string, TagState>) => void;
   setWorkspace: (workspace: WorkspaceSession) => void;
   updateConnectionStatus: (connectionId: string, isConnected: boolean) => void;
@@ -26,11 +29,14 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
+  currentView: 'dashboard',
   tags: {},
   workspace: null,
   connectionStatuses: {},
   widgets: [],
   draggedTagId: null,
+
+  setCurrentView: (view) => set({ currentView: view }),
 
   updateTags: (newTags) =>
     set((state) => ({

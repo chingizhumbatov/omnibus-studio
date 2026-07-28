@@ -17,6 +17,7 @@ The application leverages a decoupled architecture using **Tauri v2 (Rust + Reac
 * **Device Profiles (Templates)**: Reusable JSON files describing a specific device's memory map (registers, data types) independent of connection parameters. Supports complex data types including Int64/Float64, Arrays, and Raw byte streams.
   * **Tag Config (Extended)**: Each tag defines `tag_id`, `name`, `unit`, `register_type`, `address`, `bit_offset` (for packed booleans), `data_type`, `byte_order` (for Endianness handling: ABCD, CDAB, etc.), and a `scale` multiplier.
 * **Workspaces (Sessions)**: The master configuration file linking physical connection parameters (Baud rate, IP) to instantiated Device Profiles (Slave IDs) and saving the user's dashboard layout. Sessions also contain dynamic system parameters, such as the UI rendering throttle interval (`ui_throttle_ms`).
+* **Workspace Configurator UI**: A dedicated interface allowing users to dynamically create, edit, and apply Workspace Sessions without restarting the application. It includes forms for Connection settings (TCP/Serial) and a data grid for building Device Profiles and Tags.
 
 ### 3.2 Core Protocol Communications & Auto-Recovery
 * **Concurrent Multi-Protocol Polling**: Simultaneous polling across multiple Modbus RTU (serial) and Modbus TCP interfaces.
@@ -144,11 +145,10 @@ The core Data Hub maintains an in-memory ring buffer (e.g., the last 10,000 poin
 * **Purpose**: Feeds the React frontend with immediate historical context to render smooth, sliding time-series charts without any disk I/O latency.
 * **Lifecycle**: Ephemeral. Data is lost on application restart or when the buffer wraps around.
 
-### 9.2 Tier 2: Embedded SQLite (Metadata & Audit Logs)
-A lightweight SQLite database is embedded directly into the Rust core. It strictly stores low-frequency, high-value data:
-* **Configuration**: Workspaces, Device Profiles, and UI Layouts.
-* **Audit Trail**: Logs of human operator actions (who wrote what value to which register) and safety overrides.
-* **System Events**: Hardware fault records, connection timeouts, and system errors.
+### 9.2 Tier 2: Configuration & Metadata Store
+The system stores configurations and system events persistently:
+* **JSON Configuration Files**: Workspaces, Device Profiles, and UI Layouts are stored as raw `.json` files in the OS-specific AppData directory (e.g., `~/.config/omnibus-studio/workspaces/`). This ensures manual debuggability, easy sharing/version control, and rapid initial development.
+* **Embedded SQLite (Future/Audit Logs)**: A lightweight SQLite database embedded directly into the Rust core will strictly store low-frequency, high-value data, such as Audit Trails (who wrote what value to which register) and System Events (hardware fault records).
 
 ### 9.3 Tier 3: External TSDB via Plugins (Long-Term Telemetry)
 For long-term retention of raw telemetry (months/years of data), the core offloads the responsibility entirely to the plugin ecosystem.

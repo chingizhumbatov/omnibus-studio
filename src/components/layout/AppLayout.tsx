@@ -1,11 +1,15 @@
 import { ReactNode } from 'react';
 import { TreeView } from './TreeView';
+import { useAppStore } from '../../store';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const currentView = useAppStore((state) => state.currentView);
+  const setCurrentView = useAppStore((state) => state.setCurrentView);
+
   return (
     <div className="app-container">
       {/* Sidebar - Explorer Style */}
@@ -22,7 +26,20 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main className="app-main">
         {/* Top Toolbar / Tabs */}
         <div className="app-tabs">
-          <div className="app-tab">Welcome</div>
+          <div
+            className={`app-tab ${currentView === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setCurrentView('dashboard')}
+            style={{ cursor: 'pointer' }}
+          >
+            Dashboard
+          </div>
+          <div
+            className={`app-tab ${currentView === 'configurator' ? 'active' : ''}`}
+            onClick={() => setCurrentView('configurator')}
+            style={{ cursor: 'pointer' }}
+          >
+            Configurator
+          </div>
         </div>
 
         {/* Active Content */}

@@ -4,9 +4,12 @@ import { setupIpcListeners } from './core/tauri-ipc';
 import { loadWorkspace } from './core/api';
 import { useAppStore } from './store';
 import { Dashboard } from './components/dashboard/Dashboard';
+import { Configurator } from './components/configurator/Configurator';
 import { ConnectionType } from './core/contracts';
 
 function App() {
+  const currentView = useAppStore((state) => state.currentView);
+
   useEffect(() => {
     setupIpcListeners();
 
@@ -86,7 +89,7 @@ function App() {
         <h1 style={{ marginBottom: '1rem', fontWeight: 500 }}>Omnibus Studio</h1>
 
         <div style={{ flex: 1, paddingBottom: '2rem' }}>
-          <Dashboard />
+          {currentView === 'dashboard' ? <Dashboard /> : <Configurator />}
         </div>
       </div>
     </AppLayout>
