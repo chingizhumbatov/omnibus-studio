@@ -4,8 +4,17 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(tag = "type")]
 pub enum ConnectionType {
-    Serial { port: String, baud_rate: u32 },
-    Tcp { ip: String, port: u16 },
+    Serial {
+        port: String,
+        baud_rate: u32,
+        data_bits: u8,
+        parity: String,
+        stop_bits: u8,
+    },
+    Tcp {
+        ip: String,
+        port: u16,
+    },
 }
 
 /// A configuration for an active hardware connection worker.
@@ -53,6 +62,9 @@ mod tests {
                     connection_type: ConnectionType::Serial {
                         port: "COM3".to_string(),
                         baud_rate: 115200,
+                        data_bits: 8,
+                        parity: "None".to_string(),
+                        stop_bits: 1,
                     },
                     polling_interval_ms: 50,
                 },

@@ -10,26 +10,29 @@ use crate::workspace::session::{ConnectionConfig, WorkspaceSession};
 
 // Temporary import for Mock worker (Phase 4.3)
 use crate::protocol::mock::MockProtocolWorker;
+use crate::protocol::serial::SerialProtocolWorker;
 
 /// Wrapper enum to bypass the lack of dynamic dispatch (dyn compatibility)
 /// for traits with native async functions in Rust 1.75.
 pub enum ActiveWorker {
     Mock(MockProtocolWorker),
+    Serial(SerialProtocolWorker),
     // Future plugins:
     // Tcp(TcpProtocolWorker),
-    // Serial(SerialProtocolWorker),
 }
 
 impl ActiveWorker {
     pub async fn start(&mut self, config: ConnectionConfig, context: CommandContext) -> Result<()> {
         match self {
             ActiveWorker::Mock(w) => w.start(config, context).await,
+            ActiveWorker::Serial(w) => w.start(config, context).await,
         }
     }
 
     pub async fn stop(&mut self) -> Result<()> {
         match self {
             ActiveWorker::Mock(w) => w.stop().await,
+            ActiveWorker::Serial(w) => w.stop().await,
         }
     }
 }
@@ -59,12 +62,22 @@ impl PluginRegistry {
         self.stop_all().await?;
 
         for config in &session.connections {
-            info!(
-                "Instantiating MockProtocolWorker for connection: {}",
-                config.connection_id
-            );
-
-            let mut worker = ActiveWorker::Mock(MockProtocolWorker::new());
+            let mut worker = match config.connection_type {
+                crate::workspace::session::ConnectionType::Serial { .. } => {
+                    info!(
+                        "Instantiating SerialProtocolWorker for connection: {}",
+                        config.connection_id
+                    );
+                    ActiveWorker::Serial(SerialProtocolWorker::new())
+                }
+                crate::workspace::session::ConnectionType::Tcp { .. } => {
+                    info!(
+                        "Instantiating MockProtocolWorker (fallback) for TCP connection: {}",
+                        config.connection_id
+                    );
+                    ActiveWorker::Mock(MockProtocolWorker::new())
+                }
+            };
 
             let context = CommandContext::new(config.connection_id.clone(), self.hub_tx.clone());
 
