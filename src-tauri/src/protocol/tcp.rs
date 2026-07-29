@@ -43,6 +43,7 @@ impl ConnectionWorker for TcpProtocolWorker {
         info!("Starting TcpProtocolWorker for {}:{}", ip, port);
 
         let polling_interval = Duration::from_millis(config.polling_interval_ms);
+        let response_timeout = Duration::from_millis(config.response_timeout_ms);
         let ctx = context.clone();
         let connection_id = config.connection_id.clone();
         let mut adapter = self
@@ -112,13 +113,18 @@ impl ConnectionWorker for TcpProtocolWorker {
                                             connection_dropped = true;
                                         } else {
                                             let mut buf = vec![0u8; 4096];
-                                            match stream.read(&mut buf).await {
-                                                Ok(0) => {
+                                            match tokio::time::timeout(response_timeout, stream.read(&mut buf)).await {
+                                                Err(_elapsed) => {
+                                                    warn!("TCP read timed out after {}ms", response_timeout.as_millis());
+                                                    is_timeout = true;
+                                                    connection_dropped = true;
+                                                }
+                                                Ok(Ok(0)) => {
                                                     warn!("TCP stream closed by remote host");
                                                     is_timeout = true;
                                                     connection_dropped = true;
                                                 }
-                                                Ok(n) => {
+                                                Ok(Ok(n)) => {
                                                     let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
                                                     let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
                                                         connection_id: connection_id.clone(),
@@ -146,7 +152,7 @@ impl ConnectionWorker for TcpProtocolWorker {
                                                         }
                                                     }
                                                 }
-                                                Err(e) => {
+                                                Ok(Err(e)) => {
                                                     error!("Failed to read from TCP stream: {}", e);
                                                     is_timeout = true;
                                                     connection_dropped = true;

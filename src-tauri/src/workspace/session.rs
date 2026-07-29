@@ -24,7 +24,14 @@ pub struct ConnectionConfig {
     pub connection_id: String,
     pub connection_type: ConnectionType,
     pub polling_interval_ms: u64,
+    /// Timeout for waiting a response from the device, in milliseconds.
+    #[serde(default = "default_response_timeout_ms")]
+    pub response_timeout_ms: u64,
     pub devices: Vec<DeviceInstance>,
+}
+
+fn default_response_timeout_ms() -> u64 {
+    500
 }
 
 /// An instance of a device physically connected to a specific connection.

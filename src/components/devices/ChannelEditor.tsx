@@ -149,6 +149,21 @@ export function ChannelEditor() {
                     className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Response Timeout (ms)</label>
+                  <input
+                    type="number"
+                    value={(localChannel.transportConfig as TcpTransportConfig)?.responseTimeoutMs ?? 500}
+                    onChange={(e) => {
+                      const cfg = (localChannel.transportConfig || {}) as TcpTransportConfig;
+                      setLocalChannel({
+                        ...localChannel,
+                        transportConfig: { ...cfg, responseTimeoutMs: parseInt(e.target.value) || 500 }
+                      });
+                    }}
+                    className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono"
+                  />
+                </div>
               </>
             )}
 

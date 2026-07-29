@@ -83,10 +83,13 @@ function buildConnectionConfig(channel: ChannelNode, devices: DeviceNode[]): { c
     }
   }
 
+  const response_timeout_ms = (channel.transportConfig as any)?.responseTimeoutMs ?? 500;
+
   const config: ConnectionConfig = {
     connection_id: channel.id,
     connection_type,
     polling_interval_ms,
+    response_timeout_ms,
     devices: instances
   };
 

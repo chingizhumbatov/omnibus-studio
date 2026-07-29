@@ -28,6 +28,7 @@ export interface ConnectionConfig {
   connection_id: string; // Matches ChannelNode ID
   connection_type: ConnectionType;
   polling_interval_ms: number;
+  response_timeout_ms: number;
   devices: DeviceInstance[];
 }
 

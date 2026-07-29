@@ -12,6 +12,7 @@ export interface SerialTransportConfig {
 export interface TcpTransportConfig {
   ipAddress: string;
   tcpPort: number;
+  responseTimeoutMs?: number;
 }
 
 export interface ChannelNode {
