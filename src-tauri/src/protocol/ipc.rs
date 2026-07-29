@@ -28,7 +28,7 @@ pub struct SnifferFrame {
     pub connection_id: String,
     pub direction: String,
     pub payload: Vec<u8>,
-    pub timestamp_ms: u64,
+    pub timestamp_us: u64,
 }
 
 /// Event sent to the frontend with raw sniffer traces

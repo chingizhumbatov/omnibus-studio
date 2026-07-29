@@ -88,7 +88,7 @@ pub enum HubMessage {
         connection_id: String,
         direction: String,
         payload: Vec<u8>,
-        timestamp_ms: u64,
+        timestamp_us: u64,
     },
 
     /// Sent by the UI or API to reset telemetry for a specific device
@@ -125,12 +125,12 @@ impl Clone for HubMessage {
                 connection_id,
                 direction,
                 payload,
-                timestamp_ms,
+                timestamp_us,
             } => HubMessage::ProtocolTrace {
                 connection_id: connection_id.clone(),
                 direction: direction.clone(),
                 payload: payload.clone(),
-                timestamp_ms: *timestamp_ms,
+                timestamp_us: *timestamp_us,
             },
             HubMessage::ConnectionStatus {
                 connection_id,

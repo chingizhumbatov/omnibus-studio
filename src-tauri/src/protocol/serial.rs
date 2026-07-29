@@ -139,23 +139,23 @@ impl ConnectionWorker for SerialProtocolWorker {
                         }
                     } => {
                         if let Some(request) = adapter.next_request() {
-                            let timestamp_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+                            let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
                             let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
                                 connection_id: connection_id.clone(),
                                 direction: "tx".into(),
                                 payload: request.clone(),
-                                timestamp_ms,
+                                timestamp_us,
                             }).await;
 
                             if stream.write_all(&request).await.is_ok() {
                                 let mut buf = vec![0u8; 1024];
                                 if let Ok(n) = stream.read(&mut buf).await {
-                                    let timestamp_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+                                    let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
                                     let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
                                         connection_id: connection_id.clone(),
                                         direction: "rx".into(),
                                         payload: buf[..n].to_vec(),
-                                        timestamp_ms,
+                                        timestamp_us,
                                     }).await;
                                     if let Ok(tags) = adapter.process_response(&buf[..n]) {
                                         for (device_id, tag) in tags {

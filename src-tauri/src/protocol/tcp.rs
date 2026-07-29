@@ -93,12 +93,12 @@ impl ConnectionWorker for TcpProtocolWorker {
                                         let device_id_opt = adapter.current_device_id();
                                         let start_time = std::time::Instant::now();
 
-                                        let timestamp_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+                                        let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
                                         let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
                                             connection_id: connection_id.clone(),
                                             direction: "tx".into(),
                                             payload: request.clone(),
-                                            timestamp_ms,
+                                            timestamp_us,
                                         }).await;
 
                                         let mut success = false;
@@ -119,12 +119,12 @@ impl ConnectionWorker for TcpProtocolWorker {
                                                     connection_dropped = true;
                                                 }
                                                 Ok(n) => {
-                                                    let timestamp_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis() as u64;
+                                                    let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
                                                     let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
                                                         connection_id: connection_id.clone(),
                                                         direction: "rx".into(),
                                                         payload: buf[..n].to_vec(),
-                                                        timestamp_ms,
+                                                        timestamp_us,
                                                     }).await;
 
                                                     match adapter.process_response(&buf[..n]) {

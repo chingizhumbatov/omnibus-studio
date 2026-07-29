@@ -168,7 +168,7 @@ export async function initIpcBridge(): Promise<void> {
           channelId: f.connection_id,
           direction: f.direction as "tx" | "rx",
           payload: hexPayload,
-          timestamp: f.timestamp_ms
+          timestamp: f.timestamp_us
         });
       });
     }

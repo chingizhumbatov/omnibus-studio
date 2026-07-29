@@ -79,6 +79,7 @@ export interface SnifferFrame {
   connection_id: string;
   direction: string;
   payload: number[];
+  timestamp_us: number;
 }
 
 export interface SnifferUpdatedEvent {
