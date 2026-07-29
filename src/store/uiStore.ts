@@ -22,8 +22,12 @@ interface UIState {
   channels: ChannelNode[];
   devices: DeviceNode[];
   selectedDeviceId: string | null;
+  selectedChannelId: string | null;
   
   addChannel: (channel: ChannelNode) => void;
+  updateChannel: (id: string, updates: Partial<ChannelNode>) => void;
+  setSelectedChannel: (id: string | null) => void;
+  
   addDevice: (device: DeviceNode) => void;
   removeDevice: (id: string) => void;
   setSelectedDevice: (id: string | null) => void;
@@ -75,16 +79,21 @@ export const useUIStore = create<UIState>((set) => ({
     }
   ],
   selectedDeviceId: null,
+  selectedChannelId: null,
   
   addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
-  addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
+  updateChannel: (id, updates) => set((state) => ({
+    channels: state.channels.map(c => c.id === id ? { ...c, ...updates } : c)
+  })),
+  setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null }),
   
+  addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
   removeDevice: (id) => set((state) => ({ 
     devices: state.devices.filter(d => d.id !== id),
     selectedDeviceId: state.selectedDeviceId === id ? null : state.selectedDeviceId 
   })),
 
-  setSelectedDevice: (id) => set({ selectedDeviceId: id }),
+  setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null }),
   updateDevice: (id, updates) => set((state) => ({
     devices: state.devices.map(dev => dev.id === id ? { ...dev, ...updates } : dev)
   })),

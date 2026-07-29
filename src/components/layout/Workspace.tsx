@@ -1,11 +1,16 @@
 import { useUIStore } from "@/store/uiStore";
 import { DeviceEditor } from "@/components/devices/DeviceEditor";
+import { ChannelEditor } from "@/components/devices/ChannelEditor";
 
 export function Workspace() {
-  const { activeMode, setActiveMode, selectedDeviceId } = useUIStore();
+  const { activeMode, setActiveMode, selectedDeviceId, selectedChannelId } = useUIStore();
 
   if (selectedDeviceId) {
     return <DeviceEditor />;
+  }
+  
+  if (selectedChannelId) {
+    return <ChannelEditor />;
   }
 
   return (

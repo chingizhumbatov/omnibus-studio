@@ -77,11 +77,22 @@ const ChannelGroup = ({
 }) => {
   const [isOpen, setIsOpen] = useState(true);
 
+  const { selectedChannelId, setSelectedChannel } = useUIStore();
+  const isSelected = selectedChannelId === channel.id;
+
   return (
     <div className="mb-1">
       <div 
-        className="flex items-center px-2 py-1.5 hover:bg-secondary/50 cursor-pointer text-sm font-medium group transition-colors select-none"
-        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex items-center px-2 py-1.5 cursor-pointer text-sm font-medium group transition-colors select-none",
+          isSelected 
+            ? "bg-primary/10 text-foreground border-r-2 border-primary" 
+            : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSelectedChannel(channel.id);
+        }}
         onContextMenu={(e) => onContextMenu(e, channel, "channel")}
       >
         <StatusDot status={channel.status} />
