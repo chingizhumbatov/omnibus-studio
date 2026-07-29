@@ -1,8 +1,19 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { ChannelNode, DeviceNode } from "@/core/contracts/devices";
 
 export type WorkspaceMode = "operator" | "engineer";
 export type ActivityPanel = "devices" | "datahub" | "sniffer" | "ai" | "settings";
+
+// Default Modbus RTU channel — always present on first launch
+const DEFAULT_MODBUS_RTU_CHANNEL: ChannelNode = {
+  id: "chan_modbus_rtu_default",
+  name: "Modbus RTU",
+  protocol: "modbus",
+  transport: "serial",
+  status: "offline",
+  transportConfig: { baudRate: 9600, dataBits: 8, stopBits: 1, parity: "none" }
+};
 
 interface UIState {
   activeMode: WorkspaceMode;
@@ -34,67 +45,62 @@ interface UIState {
   updateDevice: (id: string, updates: Partial<DeviceNode>) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
-  activeMode: "operator",
-  setActiveMode: (mode) => set({ activeMode: mode }),
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      activeMode: "operator",
+      setActiveMode: (mode) => set({ activeMode: mode }),
 
-  activeActivity: "devices",
-  setActiveActivity: (activity) => set({ activeActivity: activity }),
+      activeActivity: "devices",
+      setActiveActivity: (activity) => set({ activeActivity: activity }),
 
-  isSidebarOpen: true,
-  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
-  setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+      isSidebarOpen: true,
+      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+      setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
 
-  isBottomDrawerOpen: false,
-  toggleBottomDrawer: () => set((state) => ({ isBottomDrawerOpen: !state.isBottomDrawerOpen })),
-  setBottomDrawerOpen: (isOpen) => set({ isBottomDrawerOpen: isOpen }),
+      isBottomDrawerOpen: false,
+      toggleBottomDrawer: () => set((state) => ({ isBottomDrawerOpen: !state.isBottomDrawerOpen })),
+      setBottomDrawerOpen: (isOpen) => set({ isBottomDrawerOpen: isOpen }),
 
-  channels: [
+      channels: [DEFAULT_MODBUS_RTU_CHANNEL],
+      devices: [],
+      selectedDeviceId: null,
+      selectedChannelId: null,
+      
+      addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
+      updateChannel: (id, updates) => set((state) => ({
+        channels: state.channels.map(c => c.id === id ? { ...c, ...updates } : c)
+      })),
+      setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null }),
+      
+      addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
+      removeDevice: (id) => set((state) => ({ 
+        devices: state.devices.filter(d => d.id !== id),
+        selectedDeviceId: state.selectedDeviceId === id ? null : state.selectedDeviceId 
+      })),
+
+      setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null }),
+      updateDevice: (id, updates) => set((state) => ({
+        devices: state.devices.map(dev => dev.id === id ? { ...dev, ...updates } : dev)
+      })),
+    }),
     {
-      id: "chan_1",
-      name: "Modbus Network 1",
-      protocol: "modbus",
-      transport: "serial",
-      status: "ok",
-      transportConfig: { baudRate: 9600, dataBits: 8, stopBits: 1, parity: "none" }
-    }
-  ],
-  devices: [
-    {
-      id: "dev_1",
-      channelId: "chan_1",
-      name: "Main PLC",
-      enabled: true,
-      config: { 
-        slaveId: 1, 
-        pollingRateMs: 1000, 
-        timeoutMs: 500,
-        byteOrder: "ABCD", 
-        tags: [
-          { id: "tag_1", name: "Temperature", registerType: "holding", address: 40001, dataType: "float32" }
-        ] 
+      name: "omnibus-ui-store",
+      // Persist only channels and devices — not selection or UI state
+      partialize: (state) => ({
+        channels: state.channels,
+        devices: state.devices,
+      }),
+      // Migration: ensure the default Modbus RTU channel always exists
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const hasDefault = state.channels.some(
+          (c) => c.id === DEFAULT_MODBUS_RTU_CHANNEL.id
+        );
+        if (!hasDefault) {
+          state.channels = [DEFAULT_MODBUS_RTU_CHANNEL, ...state.channels];
+        }
       },
-      profileId: "template_1",
-      status: "ok"
     }
-  ],
-  selectedDeviceId: null,
-  selectedChannelId: null,
-  
-  addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
-  updateChannel: (id, updates) => set((state) => ({
-    channels: state.channels.map(c => c.id === id ? { ...c, ...updates } : c)
-  })),
-  setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null }),
-  
-  addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
-  removeDevice: (id) => set((state) => ({ 
-    devices: state.devices.filter(d => d.id !== id),
-    selectedDeviceId: state.selectedDeviceId === id ? null : state.selectedDeviceId 
-  })),
-
-  setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null }),
-  updateDevice: (id, updates) => set((state) => ({
-    devices: state.devices.map(dev => dev.id === id ? { ...dev, ...updates } : dev)
-  })),
-}));
+  )
+);
