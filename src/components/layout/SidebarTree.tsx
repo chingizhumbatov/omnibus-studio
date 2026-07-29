@@ -1,7 +1,7 @@
 import { useUIStore } from "@/store/uiStore";
 import { useLogStore } from "@/store/logStore";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
-import { Folder, FolderOpen, Cpu, Settings, Play, Square, Plug, Unplug, Trash2 } from "lucide-react";
+import { Folder, FolderOpen, Cpu, Settings, Play, Square, Plug, Unplug, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ChannelNode, DeviceNode, DeviceStatus, ProtocolType } from "@/core/contracts/devices";
@@ -89,19 +89,20 @@ const ChannelGroup = ({
             ? "bg-primary/10 text-foreground border-r-2 border-primary" 
             : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
         )}
-        onClick={() => {
-          setIsOpen(!isOpen);
-          setSelectedChannel(channel.id);
-        }}
+        onClick={() => setSelectedChannel(channel.id)}
         onContextMenu={(e) => onContextMenu(e, channel, "channel")}
       >
+        <div 
+          className="p-1 -ml-1 mr-1 hover:bg-zinc-700/50 rounded text-zinc-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+        >
+          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </div>
         <StatusDot status={channel.status} />
-        {isOpen ? (
-          <FolderOpen className="w-4 h-4 mr-2 text-blue-400" />
-        ) : (
-          <Folder className="w-4 h-4 mr-2 text-blue-400" />
-        )}
-        <span className="flex-1 truncate">{channel.name}</span>
+        <span className="flex-1 truncate select-none">{channel.name}</span>
         
         <AddDeviceModal channel={channel} devicesCount={devices.length} />
       </div>
