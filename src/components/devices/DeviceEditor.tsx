@@ -2,7 +2,7 @@ import { useUIStore } from "@/store/uiStore";
 import { useLogStore } from "@/store/logStore";
 import { useDataStore } from "@/store/dataStore";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
-import { X, Save, Plus, Trash2, AlertCircle, Play, Square, Plug, Unplug, RotateCcw } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertCircle, Play, Square, Plug, Unplug, RotateCcw, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ModbusDeviceConfig, ModbusTag, DeviceNode, Endianness, ModbusRegisterType, DataType } from "@/core/contracts/devices";
@@ -22,6 +22,7 @@ export function DeviceEditor() {
   const [localDevice, setLocalDevice] = useState<DeviceNode | null>(null);
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     if (device) {
@@ -40,6 +41,8 @@ export function DeviceEditor() {
 
   const handleSave = () => {
     updateDevice(localDevice.id, localDevice);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleToggleEnable = () => {
@@ -243,10 +246,17 @@ export function DeviceEditor() {
 
           <button 
             onClick={handleSave}
-            className="flex items-center px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
+            className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+              isSaved
+                ? "bg-emerald-600 text-white"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save Changes
+            {isSaved ? (
+              <><Check className="w-4 h-4 mr-2" />Saved!</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" />Save Changes</>
+            )}
           </button>
           <button 
             onClick={() => setSelectedDevice(null)}

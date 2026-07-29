@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/store/uiStore";
 import { ChannelNode, SerialTransportConfig, TcpTransportConfig } from "@/core/contracts/devices";
-import { Save, Plug, Unplug, Settings2 } from "lucide-react";
+import { Save, Plug, Unplug, Settings2, Check } from "lucide-react";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
 
 export function ChannelEditor() {
@@ -9,6 +9,7 @@ export function ChannelEditor() {
   const channel = channels.find(c => c.id === selectedChannelId);
   
   const [localChannel, setLocalChannel] = useState<ChannelNode | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     if (channel) {
@@ -22,6 +23,8 @@ export function ChannelEditor() {
 
   const handleSave = () => {
     updateChannel(localChannel.id, localChannel);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
   const handleConnect = async (connect: boolean) => {
@@ -74,10 +77,17 @@ export function ChannelEditor() {
 
           <button
             onClick={handleSave}
-            className="flex items-center px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md shadow-md transition-all text-sm font-medium"
+            className={`flex items-center px-4 py-2 rounded-md shadow-md transition-all text-sm font-medium ${
+              isSaved
+                ? "bg-emerald-600 text-white"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save Changes
+            {isSaved ? (
+              <><Check className="w-4 h-4 mr-2" />Saved!</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" />Save Changes</>
+            )}
           </button>
         </div>
       </div>
