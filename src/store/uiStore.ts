@@ -5,16 +5,6 @@ import { ChannelNode, DeviceNode } from "@/core/contracts/devices";
 export type WorkspaceMode = "operator" | "engineer";
 export type ActivityPanel = "devices" | "datahub" | "sniffer" | "ai" | "settings";
 
-// Default Modbus RTU channel — always present on first launch
-const DEFAULT_MODBUS_RTU_CHANNEL: ChannelNode = {
-  id: "chan_modbus_rtu_default",
-  name: "Modbus RTU",
-  protocol: "modbus",
-  transport: "serial",
-  status: "offline",
-  transportConfig: { baudRate: 9600, dataBits: 8, stopBits: 1, parity: "none" }
-};
-
 interface UIState {
   activeMode: WorkspaceMode;
   setActiveMode: (mode: WorkspaceMode) => void;
@@ -62,7 +52,7 @@ export const useUIStore = create<UIState>()(
       toggleBottomDrawer: () => set((state) => ({ isBottomDrawerOpen: !state.isBottomDrawerOpen })),
       setBottomDrawerOpen: (isOpen) => set({ isBottomDrawerOpen: isOpen }),
 
-      channels: [DEFAULT_MODBUS_RTU_CHANNEL],
+      channels: [],
       devices: [],
       selectedDeviceId: null,
       selectedChannelId: null,
@@ -94,16 +84,3 @@ export const useUIStore = create<UIState>()(
     }
   )
 );
-
-// After localStorage is hydrated, guarantee the default Modbus RTU channel always exists.
-// onFinishHydration fires once after the persisted state is loaded.
-useUIStore.persist.onFinishHydration((state) => {
-  const hasDefault = state.channels.some(
-    (c) => c.id === DEFAULT_MODBUS_RTU_CHANNEL.id
-  );
-  if (!hasDefault) {
-    useUIStore.setState((s) => ({
-      channels: [DEFAULT_MODBUS_RTU_CHANNEL, ...s.channels],
-    }));
-  }
-});
