@@ -93,12 +93,14 @@ impl DataHub {
                 ref connection_id,
                 ref direction,
                 ref payload,
+                ref timestamp_ms,
             } => {
                 let _ = self.event_bus.send(msg.clone());
                 self.sniffer_buffer.push(crate::protocol::ipc::SnifferFrame {
                     connection_id: connection_id.clone(),
                     direction: direction.clone(),
                     payload: payload.clone(),
+                    timestamp_ms: *timestamp_ms,
                 });
             }
             HubMessage::WriteTag { .. } => {
