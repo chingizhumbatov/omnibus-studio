@@ -1,12 +1,12 @@
 use std::time::Duration;
 use tokio::task::JoinHandle;
 use tokio::time::sleep;
-use tracing::{info, warn};
+use tracing::{info};
 
 use super::connection::ConnectionWorker;
 use super::context::CommandContext;
 use crate::core::error::Result;
-use crate::core::messages::{HubMessage, TagQuality, TagState, TagValue};
+use crate::core::messages::{HubMessage, TagState, TagValue};
 use crate::workspace::session::{ConnectionConfig, DataType, DeviceInstance, DeviceProfile};
 
 /// A mock protocol worker for testing.

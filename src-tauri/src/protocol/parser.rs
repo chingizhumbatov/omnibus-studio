@@ -20,7 +20,7 @@ pub trait ProtocolAdapter: Send + Sync {
     }
 
     /// Queues a write request for a specific tag.
-    fn queue_write(&mut self, device_id: &str, tag_id: &str, value: crate::core::messages::TagValue) -> Result<()> {
+    fn queue_write(&mut self, _device_id: &str, _tag_id: &str, _value: crate::core::messages::TagValue) -> Result<()> {
         Err(crate::core::error::CoreError::InvalidRequest("Write not supported by this adapter".into()))
     }
 }
