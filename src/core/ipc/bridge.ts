@@ -167,7 +167,8 @@ export async function initIpcBridge(): Promise<void> {
         logState.addSnifferFrame({
           channelId: f.connection_id,
           direction: f.direction as "tx" | "rx",
-          payload: hexPayload
+          payload: hexPayload,
+          timestamp: f.timestamp_ms
         });
       });
     }
