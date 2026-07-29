@@ -2,6 +2,7 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
+use tokio::time::sleep;
 use tracing::{error, info, warn};
 
 use super::connection::ConnectionWorker;
