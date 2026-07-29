@@ -112,9 +112,6 @@ impl ConnectionWorker for TcpProtocolWorker {
                                             is_timeout = true;
                                             connection_dropped = true;
                                         } else {
-                                            // TODO: TEMPORARY SLEEP TO TEST TIMESTAMPS
-                                            tokio::time::sleep(std::time::Duration::from_millis(15)).await;
-
                                             let mut buf = vec![0u8; 4096];
                                             match stream.read(&mut buf).await {
                                                 Ok(0) => {
