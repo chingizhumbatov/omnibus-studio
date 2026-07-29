@@ -2,11 +2,11 @@ import { useUIStore } from "@/store/uiStore";
 import { useLogStore } from "@/store/logStore";
 import { useDataStore } from "@/store/dataStore";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
-import { X, Save, Plus, Trash2, AlertCircle, Play, Square, Plug, Unplug } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertCircle, Play, Square, Plug, Unplug, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { ModbusDeviceConfig, ModbusTag, DeviceNode, Endianness, ModbusRegisterType, DataType } from "@/core/contracts/devices";
-import { writeTag } from "@/core/api";
+import { writeTag, resetTelemetry } from "@/core/api";
 import { TagValue } from "@/core/contracts";
 
 export function DeviceEditor() {
@@ -258,18 +258,34 @@ export function DeviceEditor() {
       </div>
       
       {/* Telemetry Bar */}
-      <div className="bg-[#111116] border-b border-border px-4 py-1.5 flex items-center text-[11px] font-mono text-zinc-400 select-none">
-        <span>Requests: <span className="text-zinc-300">{telemetry?.requests || 0}</span></span>
-        <span className="mx-2">·</span>
-        <span>OK: <span className="text-emerald-400">{telemetry?.ok || 0}</span></span>
-        <span className="mx-2">·</span>
-        <span>Timeouts: <span className="text-red-400">{telemetry?.timeouts || 0}</span></span>
-        <span className="mx-2">·</span>
-        <span>CRC errors: <span className="text-red-400">{telemetry?.crc_errors || 0}</span></span>
-        <span className="mx-2">·</span>
-        <span>Exceptions: <span className="text-yellow-500">{telemetry?.exceptions || 0}</span></span>
-        <span className="mx-2">·</span>
-        <span>Response: <span className="text-zinc-300">{telemetry?.response_time_ms !== undefined ? `${telemetry.response_time_ms} ms` : "— ms"}</span></span>
+      <div className="bg-[#111116] border-b border-border px-4 py-1.5 flex items-center justify-between text-[11px] font-mono text-zinc-400 select-none">
+        <div className="flex items-center">
+          <span>Requests: <span className="text-zinc-300">{telemetry?.requests || 0}</span></span>
+          <span className="mx-2">·</span>
+          <span>OK: <span className="text-emerald-400">{telemetry?.ok || 0}</span></span>
+          <span className="mx-2">·</span>
+          <span>Timeouts: <span className="text-red-400">{telemetry?.timeouts || 0}</span></span>
+          <span className="mx-2">·</span>
+          <span>CRC errors: <span className="text-red-400">{telemetry?.crc_errors || 0}</span></span>
+          <span className="mx-2">·</span>
+          <span>Exceptions: <span className="text-yellow-500">{telemetry?.exceptions || 0}</span></span>
+          <span className="mx-2">·</span>
+          <span>Response: <span className="text-zinc-300">{telemetry?.response_time_ms !== undefined ? `${telemetry.response_time_ms} ms` : "— ms"}</span></span>
+        </div>
+        <button 
+          onClick={async () => {
+            try {
+              await resetTelemetry(device.id);
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className="flex items-center text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-800/50 hover:bg-zinc-700/50 px-2 py-0.5 rounded border border-zinc-700/50"
+          title="Reset Counters"
+        >
+          <RotateCcw className="w-3 h-3 mr-1" />
+          Reset
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8">

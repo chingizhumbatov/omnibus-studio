@@ -53,7 +53,6 @@ impl ConnectionWorker for TcpProtocolWorker {
         // Start the connection and polling loop
         let handle = tokio::spawn(async move {
             let addr = format!("{}:{}", ip, port);
-            let mut telemetry_state: std::collections::HashMap<String, crate::core::messages::DeviceTelemetry> = std::collections::HashMap::new();
 
             loop {
                 // Connection phase
@@ -156,29 +155,19 @@ impl ConnectionWorker for TcpProtocolWorker {
                                         }
 
                                         if let Some(device_id) = device_id_opt {
-                                            let entry = telemetry_state.entry(device_id.clone()).or_insert_with(|| crate::core::messages::DeviceTelemetry {
-                                                requests: 0,
-                                                ok: 0,
-                                                timeouts: 0,
+                                            let delta = crate::core::messages::DeviceTelemetry {
+                                                requests: 1,
+                                                ok: if success { 1 } else { 0 },
+                                                timeouts: if is_timeout { 1 } else { 0 },
                                                 crc_errors: 0,
-                                                exceptions: 0,
-                                                response_time_ms: 0,
-                                            });
-
-                                            entry.requests += 1;
-                                            if success {
-                                                entry.ok += 1;
-                                                entry.response_time_ms = start_time.elapsed().as_millis() as u32;
-                                            } else if is_timeout {
-                                                entry.timeouts += 1;
-                                            } else if is_exception {
-                                                entry.exceptions += 1;
-                                            }
+                                                exceptions: if is_exception { 1 } else { 0 },
+                                                response_time_ms: if success { start_time.elapsed().as_millis() as u32 } else { 0 },
+                                            };
 
                                             let _ = ctx.send_to_hub(HubMessage::DeviceTelemetry {
                                                 connection_id: connection_id.clone(),
                                                 device_id: device_id.clone(),
-                                                telemetry: entry.clone(),
+                                                telemetry: delta,
                                             }).await;
                                         }
 

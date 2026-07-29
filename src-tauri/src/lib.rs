@@ -29,6 +29,15 @@ async fn write_tag(
 }
 
 #[tauri::command]
+async fn reset_telemetry(
+    state: tauri::State<'_, AppState>,
+    device_id: String,
+) -> Result<(), String> {
+    let _ = state.hub_sender.send(HubMessage::ResetTelemetry { device_id }).await;
+    Ok(())
+}
+
+#[tauri::command]
 async fn load_workspace(
     state: tauri::State<'_, AppState>,
     session: WorkspaceSession,
@@ -155,7 +164,8 @@ pub fn run() {
             load_session,
             list_sessions,
             connect_channel,
-            disconnect_channel
+            disconnect_channel,
+            reset_telemetry
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

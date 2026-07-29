@@ -90,6 +90,11 @@ pub enum HubMessage {
         payload: Vec<u8>,
         timestamp_ms: u64,
     },
+
+    /// Sent by the UI or API to reset telemetry for a specific device
+    ResetTelemetry {
+        device_id: String,
+    },
 }
 
 /// Manual Clone implementation for HubMessage.
@@ -146,6 +151,9 @@ impl Clone for HubMessage {
                 device_id: device_id.clone(),
                 tag_id: tag_id.clone(),
                 value: value.clone(),
+            },
+            HubMessage::ResetTelemetry { device_id } => HubMessage::ResetTelemetry {
+                device_id: device_id.clone(),
             },
             HubMessage::QueryHistory { .. } => {
                 // oneshot::Sender is not Clone. This variant is consumed in process_message

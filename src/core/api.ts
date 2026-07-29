@@ -20,6 +20,13 @@ export async function writeTag(
 }
 
 /**
+ * Resets the telemetry counters for a specific device in the Data Hub.
+ */
+export async function resetTelemetry(deviceId: string): Promise<void> {
+  return invoke('reset_telemetry', { deviceId });
+}
+
+/**
  * Loads a workspace session into the Rust backend, starting all configured connections.
  */
 export async function loadWorkspace(session: WorkspaceSession): Promise<void> {

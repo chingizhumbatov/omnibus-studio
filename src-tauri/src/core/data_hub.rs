@@ -86,7 +86,22 @@ impl DataHub {
                 ..
             } => {
                 let _ = self.event_bus.send(msg.clone());
-                self.telemetry.insert(device_id.clone(), telemetry.clone());
+                let current = self.telemetry.entry(device_id.clone()).or_insert_with(|| crate::core::messages::DeviceTelemetry {
+                    requests: 0,
+                    ok: 0,
+                    timeouts: 0,
+                    crc_errors: 0,
+                    exceptions: 0,
+                    response_time_ms: 0,
+                });
+                
+                current.requests += telemetry.requests;
+                current.ok += telemetry.ok;
+                current.timeouts += telemetry.timeouts;
+                current.crc_errors += telemetry.crc_errors;
+                current.exceptions += telemetry.exceptions;
+                current.response_time_ms = telemetry.response_time_ms; // Overwrite with latest response time
+
                 self.dirty_telemetry.insert(device_id.clone());
             }
             HubMessage::ProtocolTrace {
@@ -107,6 +122,17 @@ impl DataHub {
                 // Broadcast to any listening plugins (ignore if no receivers)
                 let _ = self.event_bus.send(msg.clone());
                 warn!("WriteTag received in DataHub but not implemented yet to route to worker");
+            }
+            HubMessage::ResetTelemetry { ref device_id } => {
+                if let Some(current) = self.telemetry.get_mut(device_id) {
+                    current.requests = 0;
+                    current.ok = 0;
+                    current.timeouts = 0;
+                    current.crc_errors = 0;
+                    current.exceptions = 0;
+                    current.response_time_ms = 0;
+                    self.dirty_telemetry.insert(device_id.clone());
+                }
             }
             HubMessage::QueryHistory { tag_id, responder } => {
                 // Do NOT broadcast this — oneshot::Sender is not Clone.
