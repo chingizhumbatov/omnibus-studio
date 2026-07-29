@@ -16,3 +16,22 @@ pub struct ConnectionStatusEvent {
     pub is_connected: bool,
     pub error: Option<String>,
 }
+
+/// Event sent to the frontend with updated telemetry
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TelemetryUpdatedEvent {
+    pub telemetry: HashMap<String, crate::core::messages::DeviceTelemetry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnifferFrame {
+    pub connection_id: String,
+    pub direction: String,
+    pub payload: Vec<u8>,
+}
+
+/// Event sent to the frontend with raw sniffer traces
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SnifferUpdatedEvent {
+    pub frames: Vec<SnifferFrame>,
+}

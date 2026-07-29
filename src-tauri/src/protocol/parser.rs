@@ -12,4 +12,15 @@ pub trait ProtocolAdapter: Send + Sync {
     /// Called by the transport worker when it receives bytes from the bus.
     /// The adapter parses the response and returns a list of updated tags along with their device_id.
     fn process_response(&mut self, payload: &[u8]) -> Result<Vec<(String, TagState)>>;
+
+    /// Returns the device ID (instance_id) of the currently inflight request (if any).
+    /// Used by the transport worker to attribute telemetry to the correct device.
+    fn current_device_id(&self) -> Option<String> {
+        None
+    }
+
+    /// Queues a write request for a specific tag.
+    fn queue_write(&mut self, device_id: &str, tag_id: &str, value: crate::core::messages::TagValue) -> Result<()> {
+        Err(crate::core::error::CoreError::InvalidRequest("Write not supported by this adapter".into()))
+    }
 }

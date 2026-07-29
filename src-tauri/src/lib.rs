@@ -20,16 +20,11 @@ async fn write_tag(
     tag_id: String,
     value: TagValue,
 ) -> Result<(), String> {
-    state
-        .hub_sender
-        .send(HubMessage::WriteTag {
-            connection_id,
-            device_id,
-            tag_id,
-            value,
-        })
+    let registry = state.registry.lock().await;
+    registry
+        .write_tag(&connection_id, &device_id, &tag_id, value)
         .await
-        .map_err(|e| format!("Failed to send to hub: {}", e))?;
+        .map_err(|e| format!("Failed to write tag: {}", e))?;
     Ok(())
 }
 
@@ -99,6 +94,33 @@ async fn get_tag_history(
         .map_err(|e| format!("DataHub did not respond to QueryHistory: {}", e))
 }
 
+#[tauri::command]
+async fn connect_channel(
+    state: tauri::State<'_, AppState>,
+    config: crate::workspace::session::ConnectionConfig,
+    profiles: Vec<crate::workspace::session::DeviceProfile>,
+) -> Result<(), String> {
+    let mut registry = state.registry.lock().await;
+    registry
+        .connect_channel(config, profiles)
+        .await
+        .map_err(|e| format!("Failed to connect channel: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn disconnect_channel(
+    state: tauri::State<'_, AppState>,
+    connection_id: String,
+) -> Result<(), String> {
+    let mut registry = state.registry.lock().await;
+    registry
+        .disconnect_channel(&connection_id)
+        .await
+        .map_err(|e| format!("Failed to disconnect channel: {}", e))?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -131,7 +153,9 @@ pub fn run() {
             get_tag_history,
             save_session,
             load_session,
-            list_sessions
+            list_sessions,
+            connect_channel,
+            disconnect_channel
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

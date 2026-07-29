@@ -31,6 +31,17 @@ pub struct TagState {
     pub timestamp_ms: u64,
 }
 
+/// Represents device telemetry data for the UI
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeviceTelemetry {
+    pub requests: u32,
+    pub ok: u32,
+    pub timeouts: u32,
+    pub crc_errors: u32,
+    pub exceptions: u32,
+    pub response_time_ms: u32,
+}
+
 /// The central message contract used by all workers and plugins to communicate with the Data Hub.
 /// This enum strictly controls all state mutations in the system.
 #[derive(Debug)]
@@ -40,6 +51,13 @@ pub enum HubMessage {
         connection_id: String,
         device_id: String,
         state: TagState,
+    },
+
+    /// Emitted by a Connection Worker to update telemetry stats.
+    DeviceTelemetry {
+        connection_id: String,
+        device_id: String,
+        telemetry: DeviceTelemetry,
     },
 
     /// Emitted by a Connection Worker to update its connectivity status.
@@ -64,6 +82,13 @@ pub enum HubMessage {
         tag_id: String,
         responder: oneshot::Sender<Vec<TagState>>,
     },
+
+    /// Emitted by a Connection Worker to trace raw protocol packets (Rx/Tx)
+    ProtocolTrace {
+        connection_id: String,
+        direction: String,
+        payload: Vec<u8>,
+    },
 }
 
 /// Manual Clone implementation for HubMessage.
@@ -80,6 +105,24 @@ impl Clone for HubMessage {
                 connection_id: connection_id.clone(),
                 device_id: device_id.clone(),
                 state: state.clone(),
+            },
+            HubMessage::DeviceTelemetry {
+                connection_id,
+                device_id,
+                telemetry,
+            } => HubMessage::DeviceTelemetry {
+                connection_id: connection_id.clone(),
+                device_id: device_id.clone(),
+                telemetry: telemetry.clone(),
+            },
+            HubMessage::ProtocolTrace {
+                connection_id,
+                direction,
+                payload,
+            } => HubMessage::ProtocolTrace {
+                connection_id: connection_id.clone(),
+                direction: direction.clone(),
+                payload: payload.clone(),
             },
             HubMessage::ConnectionStatus {
                 connection_id,

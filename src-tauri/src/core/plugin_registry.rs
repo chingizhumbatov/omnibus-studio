@@ -23,11 +23,11 @@ pub enum ActiveWorker {
 }
 
 impl ActiveWorker {
-    pub async fn start(&mut self, config: ConnectionConfig, context: CommandContext) -> Result<()> {
+    pub async fn start(&mut self, config: ConnectionConfig, context: CommandContext, command_rx: tokio::sync::mpsc::Receiver<crate::protocol::connection::WorkerCommand>) -> Result<()> {
         match self {
-            ActiveWorker::Mock(w) => w.start(config, context).await,
-            ActiveWorker::Serial(w) => w.start(config, context).await,
-            ActiveWorker::Tcp(w) => w.start(config, context).await,
+            ActiveWorker::Mock(w) => w.start(config, context, command_rx).await,
+            ActiveWorker::Serial(w) => w.start(config, context, command_rx).await,
+            ActiveWorker::Tcp(w) => w.start(config, context, command_rx).await,
         }
     }
 
@@ -44,6 +44,9 @@ pub struct PluginRegistry {
     /// Active workers mapped by connection_id
     workers: HashMap<String, ActiveWorker>,
 
+    /// Command channels for sending instructions (e.g. WriteTag) to running workers
+    worker_txs: HashMap<String, mpsc::Sender<crate::protocol::connection::WorkerCommand>>,
+
     /// Channel for sending data from plugins to DataHub
     hub_tx: mpsc::Sender<HubMessage>,
 }
@@ -52,6 +55,7 @@ impl PluginRegistry {
     pub fn new(hub_tx: mpsc::Sender<HubMessage>) -> Self {
         Self {
             workers: HashMap::new(),
+            worker_txs: HashMap::new(),
             hub_tx,
         }
     }
@@ -110,13 +114,16 @@ impl PluginRegistry {
 
             let context = CommandContext::new(config.connection_id.clone(), self.hub_tx.clone());
 
+            let (tx, rx) = mpsc::channel(32);
+
             // Start the worker
-            if let Err(e) = worker.start(config.clone(), context).await {
+            if let Err(e) = worker.start(config.clone(), context, rx).await {
                 warn!("Failed to start worker {}: {}", config.connection_id, e);
                 continue;
             }
 
             self.workers.insert(config.connection_id.clone(), worker);
+            self.worker_txs.insert(config.connection_id.clone(), tx);
         }
 
         info!("Successfully loaded {} workers.", self.workers.len());
@@ -135,8 +142,93 @@ impl PluginRegistry {
                 warn!("Error stopping worker {}: {}", conn_id, e);
             }
         }
+        self.worker_txs.clear();
 
         Ok(())
+    }
+
+    /// Start a single connection worker with specific profiles
+    pub async fn connect_channel(
+        &mut self,
+        config: ConnectionConfig,
+        profiles: Vec<crate::workspace::session::DeviceProfile>,
+    ) -> Result<()> {
+        let conn_id = config.connection_id.clone();
+        info!("Connecting channel: {}", conn_id);
+
+        // Ensure clean state for this channel
+        self.disconnect_channel(&conn_id).await?;
+
+        // Resolve profiles for all devices on this connection
+        let mut resolved_devices = Vec::new();
+        for device in &config.devices {
+            if let Some(profile) = profiles.iter().find(|p| p.profile_id == device.profile_id) {
+                resolved_devices.push((device.clone(), profile.clone()));
+            } else {
+                warn!("Profile {} not found for device {}", device.profile_id, device.instance_id);
+            }
+        }
+
+        let mut worker = match config.connection_type {
+            crate::workspace::session::ConnectionType::Serial { .. } => {
+                info!("Instantiating SerialProtocolWorker for connection: {}", conn_id);
+                let adapter = ModbusRtuAdapter::new(resolved_devices);
+                ActiveWorker::Serial(SerialProtocolWorker::new(Box::new(adapter)))
+            }
+            crate::workspace::session::ConnectionType::Tcp { .. } => {
+                info!("Instantiating TcpProtocolWorker for TCP connection: {}", conn_id);
+                let adapter = ModbusTcpAdapter::new(resolved_devices);
+                ActiveWorker::Tcp(TcpProtocolWorker::new(Box::new(adapter)))
+            }
+            crate::workspace::session::ConnectionType::Mock => {
+                info!("Instantiating MockProtocolWorker for Mock connection: {}", conn_id);
+                ActiveWorker::Mock(MockProtocolWorker::new(resolved_devices))
+            }
+        };
+
+        let context = CommandContext::new(conn_id.clone(), self.hub_tx.clone());
+        let (tx, rx) = mpsc::channel(32);
+
+        if let Err(e) = worker.start(config.clone(), context, rx).await {
+            warn!("Failed to start worker {}: {}", conn_id, e);
+            return Err(e);
+        }
+
+        self.workers.insert(conn_id.clone(), worker);
+        self.worker_txs.insert(conn_id, tx);
+        Ok(())
+    }
+
+    /// Stop a single connection worker
+    pub async fn disconnect_channel(&mut self, connection_id: &str) -> Result<()> {
+        if let Some(mut worker) = self.workers.remove(connection_id) {
+            info!("Stopping worker for connection: {}", connection_id);
+            if let Err(e) = worker.stop().await {
+                warn!("Error stopping worker {}: {}", connection_id, e);
+            }
+            self.worker_txs.remove(connection_id);
+        }
+        Ok(())
+    }
+
+    /// Send a WriteTag command to a running worker
+    pub async fn write_tag(
+        &self,
+        connection_id: &str,
+        device_id: &str,
+        tag_id: &str,
+        value: crate::core::messages::TagValue,
+    ) -> Result<()> {
+        if let Some(tx) = self.worker_txs.get(connection_id) {
+            tx.send(crate::protocol::connection::WorkerCommand::WriteTag {
+                device_id: device_id.to_string(),
+                tag_id: tag_id.to_string(),
+                value,
+            }).await.map_err(|e| crate::core::error::CoreError::InvalidRequest(format!("Failed to send WriteTag to worker: {}", e)))?;
+            Ok(())
+        } else {
+            Err(crate::core::error::CoreError::InvalidRequest(format!("No running worker for connection: {}", connection_id)))
+        }
     }
 }
 

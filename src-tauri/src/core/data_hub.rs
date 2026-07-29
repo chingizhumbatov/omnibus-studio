@@ -21,6 +21,15 @@ pub struct DataHub {
     /// Internal set of tags that have been updated since the last UI emission.
     dirty_tags: HashSet<String>,
 
+    /// Latest telemetry stats per device.
+    telemetry: HashMap<String, crate::core::messages::DeviceTelemetry>,
+
+    /// Internal set of devices whose telemetry has been updated since the last UI emission.
+    dirty_telemetry: HashSet<String>,
+
+    /// Buffer for sniffer packets captured between UI flushes
+    sniffer_buffer: Vec<crate::protocol::ipc::SnifferFrame>,
+
     /// Broadcast channel for out-of-tree plugins, sniffer, and AI integrations.
     /// Every incoming message is cloned and sent out to all active subscribers.
     pub event_bus: broadcast::Sender<HubMessage>,
@@ -39,6 +48,9 @@ impl DataHub {
             tag_history: HashMap::new(),
             port_statuses: HashMap::new(),
             dirty_tags: HashSet::new(),
+            telemetry: HashMap::new(),
+            dirty_telemetry: HashSet::new(),
+            sniffer_buffer: Vec::new(),
             event_bus,
         }
     }
@@ -67,6 +79,27 @@ impl DataHub {
                 let _ = self.event_bus.send(msg.clone());
                 self.port_statuses
                     .insert(connection_id.clone(), is_connected);
+            }
+            HubMessage::DeviceTelemetry {
+                ref device_id,
+                ref telemetry,
+                ..
+            } => {
+                let _ = self.event_bus.send(msg.clone());
+                self.telemetry.insert(device_id.clone(), telemetry.clone());
+                self.dirty_telemetry.insert(device_id.clone());
+            }
+            HubMessage::ProtocolTrace {
+                ref connection_id,
+                ref direction,
+                ref payload,
+            } => {
+                let _ = self.event_bus.send(msg.clone());
+                self.sniffer_buffer.push(crate::protocol::ipc::SnifferFrame {
+                    connection_id: connection_id.clone(),
+                    direction: direction.clone(),
+                    payload: payload.clone(),
+                });
             }
             HubMessage::WriteTag { .. } => {
                 // Broadcast to any listening plugins (ignore if no receivers)
@@ -98,6 +131,22 @@ impl DataHub {
             }
         }
         updates
+    }
+
+    pub fn flush_dirty_telemetry(&mut self) -> HashMap<String, crate::core::messages::DeviceTelemetry> {
+        let mut updates = HashMap::with_capacity(self.dirty_telemetry.len());
+        for device_id in self.dirty_telemetry.drain() {
+            if let Some(tel) = self.telemetry.get(&device_id) {
+                updates.insert(device_id, tel.clone());
+            }
+        }
+        updates
+    }
+
+    pub fn flush_sniffer_buffer(&mut self) -> Vec<crate::protocol::ipc::SnifferFrame> {
+        let frames = self.sniffer_buffer.clone();
+        self.sniffer_buffer.clear();
+        frames
     }
 }
 
@@ -150,6 +199,26 @@ pub async fn run_data_hub_manager(
                         let event = TagsUpdatedEvent { tags };
                         if let Err(e) = app.emit("tags-updated", event) {
                             error!("Failed to emit tags-updated event: {}", e);
+                        }
+                    }
+                }
+
+                let telemetry = hub.flush_dirty_telemetry();
+                if !telemetry.is_empty() {
+                    if let Some(app) = &app_handle {
+                        let event = crate::protocol::ipc::TelemetryUpdatedEvent { telemetry };
+                        if let Err(e) = app.emit("telemetry-updated", event) {
+                            error!("Failed to emit telemetry-updated event: {}", e);
+                        }
+                    }
+                }
+
+                let frames = hub.flush_sniffer_buffer();
+                if !frames.is_empty() {
+                    if let Some(app) = &app_handle {
+                        let event = crate::protocol::ipc::SnifferUpdatedEvent { frames };
+                        if let Err(e) = app.emit("sniffer-updated", event) {
+                            error!("Failed to emit sniffer-updated event: {}", e);
                         }
                     }
                 }

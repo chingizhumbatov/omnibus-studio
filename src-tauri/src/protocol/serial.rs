@@ -56,7 +56,7 @@ impl SerialProtocolWorker {
 // Default is removed because we need an adapter to construct it.
 
 impl ConnectionWorker for SerialProtocolWorker {
-    async fn start(&mut self, config: ConnectionConfig, context: CommandContext) -> Result<()> {
+    async fn start(&mut self, config: ConnectionConfig, context: CommandContext, mut command_rx: tokio::sync::mpsc::Receiver<crate::protocol::connection::WorkerCommand>) -> Result<()> {
         let (port_name, baud_rate, data_bits, parity, stop_bits) = match &config.connection_type {
             ConnectionType::Serial {
                 port,
@@ -121,26 +121,35 @@ impl ConnectionWorker for SerialProtocolWorker {
         // Start the polling loop
         let handle = tokio::spawn(async move {
             loop {
-                if let Some(request) = adapter.next_request() {
-                    if stream.write_all(&request).await.is_ok() {
-                        let mut buf = vec![0u8; 1024];
-                        if let Ok(n) = stream.read(&mut buf).await {
-                            if let Ok(tags) = adapter.process_response(&buf[..n]) {
-                                for (device_id, tag) in tags {
-                                    let _ = ctx
-                                        .send_to_hub(HubMessage::UpdateTag {
-                                            connection_id: connection_id.clone(),
-                                            device_id,
-                                            state: tag,
-                                        })
-                                        .await;
+                tokio::select! {
+                    cmd = command_rx.recv() => {
+                        if let Some(crate::protocol::connection::WorkerCommand::WriteTag { device_id, tag_id, value }) = cmd {
+                            let _ = adapter.queue_write(&device_id, &tag_id, value);
+                        } else {
+                            break;
+                        }
+                    }
+                    _ = sleep(polling_interval) => {
+                        if let Some(request) = adapter.next_request() {
+                            if stream.write_all(&request).await.is_ok() {
+                                let mut buf = vec![0u8; 1024];
+                                if let Ok(n) = stream.read(&mut buf).await {
+                                    if let Ok(tags) = adapter.process_response(&buf[..n]) {
+                                        for (device_id, tag) in tags {
+                                            let _ = ctx
+                                                .send_to_hub(HubMessage::UpdateTag {
+                                                    connection_id: connection_id.clone(),
+                                                    device_id,
+                                                    state: tag,
+                                                })
+                                                .await;
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-
-                sleep(polling_interval).await;
             }
         });
 

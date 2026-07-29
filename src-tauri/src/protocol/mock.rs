@@ -26,7 +26,7 @@ impl MockProtocolWorker {
 }
 
 impl ConnectionWorker for MockProtocolWorker {
-    async fn start(&mut self, config: ConnectionConfig, context: CommandContext) -> Result<()> {
+    async fn start(&mut self, config: ConnectionConfig, context: CommandContext, mut command_rx: tokio::sync::mpsc::Receiver<crate::protocol::connection::WorkerCommand>) -> Result<()> {
         info!(
             "Starting MockProtocolWorker for connection: {}",
             config.connection_id
@@ -48,52 +48,72 @@ impl ConnectionWorker for MockProtocolWorker {
         let handle = tokio::spawn(async move {
             let mut counter = 0;
             loop {
-                sleep(polling_interval).await;
-
-                let timestamp_ms = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis() as u64;
-
-                for (instance, profile) in &devices_clone {
-                    for tag in &profile.tags {
-                        let val = match tag.data_type {
-                            DataType::Float32 | DataType::Float64 => {
-                                // Sine wave
-                                TagValue::Float(
-                                    ((counter as f64 + tag.address as f64) * 0.1).sin() * 100.0,
-                                )
-                            }
-                            DataType::Bool => {
-                                TagValue::Integer(if counter % 2 == 0 { 1 } else { 0 })
-                            }
-                            _ => {
-                                // Linear increment
-                                TagValue::Integer((counter + tag.address as i32) as i64 % 100)
-                            }
-                        };
-
-                        let state = TagState {
-                            tag_id: tag.tag_id.clone(),
-                            value: val,
-                            quality: TagQuality::Good,
-                            timestamp_ms,
-                        };
-
-                        let msg = HubMessage::UpdateTag {
-                            connection_id: ctx.connection_id.clone(),
-                            device_id: instance.instance_id.clone(),
-                            state,
-                        };
-
-                        if let Err(e) = ctx.send_to_hub(msg).await {
-                            warn!("MockProtocolWorker failed to send data to hub: {}", e);
+                tokio::select! {
+                    cmd = command_rx.recv() => {
+                        if let Some(crate::protocol::connection::WorkerCommand::WriteTag { device_id, tag_id, value }) = cmd {
+                            tracing::info!("Mock received WriteTag for {}/{}: {:?}", device_id, tag_id, value);
+                        } else {
                             break;
                         }
                     }
-                }
+                    _ = sleep(polling_interval) => {
+                        let timestamp_ms = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis() as u64;
 
-                counter += 1;
+                        for (instance, profile) in &devices_clone {
+                            for tag in &profile.tags {
+                                let val = match tag.data_type {
+                                    DataType::Float32 | DataType::Float64 => {
+                                        TagValue::Float(
+                                            ((counter as f64 + tag.address as f64) * 0.1).sin() * 100.0,
+                                        )
+                                    }
+                                    DataType::Bool => {
+                                        TagValue::Integer(if counter % 2 == 0 { 1 } else { 0 })
+                                    }
+                                    _ => {
+                                        TagValue::Integer((counter + tag.address as i32) as i64 % 100)
+                                    }
+                                };
+
+                                let state = TagState {
+                                    tag_id: tag.tag_id.clone(),
+                                    value: val.clone(),
+                                    quality: crate::core::messages::TagQuality::Good,
+                                    timestamp_ms,
+                                };
+
+                                let _ = ctx
+                                    .send_to_hub(HubMessage::UpdateTag {
+                                        connection_id: ctx.connection_id.clone(),
+                                        device_id: instance.instance_id.clone(),
+                                        state,
+                                    })
+                                    .await;
+                            }
+
+                            let telemetry = crate::core::messages::DeviceTelemetry {
+                                requests: counter as u32,
+                                ok: counter as u32,
+                                timeouts: 0,
+                                crc_errors: 0,
+                                exceptions: 0,
+                                response_time_ms: 12,
+                            };
+                            let _ = ctx
+                                .send_to_hub(HubMessage::DeviceTelemetry {
+                                    connection_id: ctx.connection_id.clone(),
+                                    device_id: instance.instance_id.clone(),
+                                    telemetry,
+                                })
+                                .await;
+                        }
+
+                        counter += 1;
+                    }
+                }
             }
         });
 

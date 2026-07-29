@@ -1,5 +1,16 @@
 use crate::core::error::Result;
 use crate::workspace::session::ConnectionConfig;
+use crate::core::messages::TagValue;
+use tokio::sync::mpsc;
+
+#[derive(Debug, Clone)]
+pub enum WorkerCommand {
+    WriteTag {
+        device_id: String,
+        tag_id: String,
+        value: TagValue,
+    }
+}
 
 /// The foundational interface for all Native Plugins (Protocol Drivers).
 /// This defines a standard contract for any hardware or network adapter
@@ -16,6 +27,7 @@ pub trait ConnectionWorker: Send + Sync {
         &mut self,
         config: ConnectionConfig,
         context: crate::protocol::context::CommandContext,
+        command_rx: mpsc::Receiver<WorkerCommand>,
     ) -> Result<()>;
 
     /// Gracefully stops the worker's internal loops and closes underlying sockets/ports.
