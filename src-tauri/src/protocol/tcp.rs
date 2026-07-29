@@ -115,11 +115,14 @@ impl ConnectionWorker for TcpProtocolWorker {
                                             let mut buf = vec![0u8; 4096];
                                             match tokio::time::timeout(response_timeout, stream.read(&mut buf)).await {
                                                 Err(_elapsed) => {
+                                                    // Response timeout — device did not answer in time.
+                                                    // Do NOT drop the TCP connection: the socket is still alive,
+                                                    // just skip this cycle and count as timeout.
                                                     warn!("TCP read timed out after {}ms", response_timeout.as_millis());
                                                     is_timeout = true;
-                                                    connection_dropped = true;
                                                 }
                                                 Ok(Ok(0)) => {
+                                                    // Remote host closed the connection
                                                     warn!("TCP stream closed by remote host");
                                                     is_timeout = true;
                                                     connection_dropped = true;
@@ -153,6 +156,7 @@ impl ConnectionWorker for TcpProtocolWorker {
                                                     }
                                                 }
                                                 Ok(Err(e)) => {
+                                                    // Real IO error — connection is broken
                                                     error!("Failed to read from TCP stream: {}", e);
                                                     is_timeout = true;
                                                     connection_dropped = true;
