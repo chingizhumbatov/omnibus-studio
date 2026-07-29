@@ -91,16 +91,19 @@ export const useUIStore = create<UIState>()(
         channels: state.channels,
         devices: state.devices,
       }),
-      // Migration: ensure the default Modbus RTU channel always exists
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        const hasDefault = state.channels.some(
-          (c) => c.id === DEFAULT_MODBUS_RTU_CHANNEL.id
-        );
-        if (!hasDefault) {
-          state.channels = [DEFAULT_MODBUS_RTU_CHANNEL, ...state.channels];
-        }
-      },
     }
   )
 );
+
+// After localStorage is hydrated, guarantee the default Modbus RTU channel always exists.
+// onFinishHydration fires once after the persisted state is loaded.
+useUIStore.persist.onFinishHydration((state) => {
+  const hasDefault = state.channels.some(
+    (c) => c.id === DEFAULT_MODBUS_RTU_CHANNEL.id
+  );
+  if (!hasDefault) {
+    useUIStore.setState((s) => ({
+      channels: [DEFAULT_MODBUS_RTU_CHANNEL, ...s.channels],
+    }));
+  }
+});
