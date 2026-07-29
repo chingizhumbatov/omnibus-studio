@@ -72,10 +72,21 @@ function buildConnectionConfig(channel: ChannelNode, devices: DeviceNode[]): { c
     });
   }
 
+  // Calculate polling interval (use minimum across all devices, default to 1000)
+  let polling_interval_ms = 1000;
+  if (devices.length > 0) {
+    const rates = devices
+      .map(d => (d.config as any)?.pollingRateMs)
+      .filter(rate => typeof rate === "number" && rate > 0);
+    if (rates.length > 0) {
+      polling_interval_ms = Math.min(...rates);
+    }
+  }
+
   const config: ConnectionConfig = {
     connection_id: channel.id,
     connection_type,
-    polling_interval_ms: 1000, // TODO: Use channel or device config
+    polling_interval_ms,
     devices: instances
   };
 
