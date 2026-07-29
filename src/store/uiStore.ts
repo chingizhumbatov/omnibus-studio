@@ -27,6 +27,7 @@ interface UIState {
   
   addChannel: (channel: ChannelNode) => void;
   updateChannel: (id: string, updates: Partial<ChannelNode>) => void;
+  removeChannel: (id: string) => void;
   setSelectedChannel: (id: string | null) => void;
   
   addDevice: (device: DeviceNode) => void;
@@ -60,6 +61,12 @@ export const useUIStore = create<UIState>()(
       addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
       updateChannel: (id, updates) => set((state) => ({
         channels: state.channels.map(c => c.id === id ? { ...c, ...updates } : c)
+      })),
+      removeChannel: (id) => set((state) => ({
+        channels: state.channels.filter(c => c.id !== id),
+        devices: state.devices.filter(d => d.channelId !== id),
+        selectedChannelId: state.selectedChannelId === id ? null : state.selectedChannelId,
+        selectedDeviceId: state.devices.find(d => d.channelId === id && d.id === state.selectedDeviceId) ? null : state.selectedDeviceId,
       })),
       setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null }),
       

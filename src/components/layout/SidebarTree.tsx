@@ -127,7 +127,7 @@ const ChannelGroup = ({
 };
 
 export function SidebarTree() {
-  const { channels, devices, removeDevice, updateDevice } = useUIStore();
+  const { channels, devices, removeDevice, removeChannel, updateDevice } = useUIStore();
   const { addSystemLog } = useLogStore();
   
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -174,8 +174,8 @@ export function SidebarTree() {
       removeDevice(node.id);
       addSystemLog({ level: "warn", source: "ui", message: `Device '${node.name}' deleted` });
     } else {
-      // Future: add removeChannel
-      addSystemLog({ level: "warn", source: "ui", message: `Channel '${node.name}' deletion not implemented yet` });
+      removeChannel(node.id);
+      addSystemLog({ level: "warn", source: "ui", message: `Channel '${node.name}' and all its devices deleted` });
     }
   };
 
