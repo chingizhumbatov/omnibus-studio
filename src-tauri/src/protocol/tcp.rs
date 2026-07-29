@@ -2,7 +2,6 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
-use tokio::time::sleep;
 use tracing::{error, info, warn};
 
 use super::connection::ConnectionWorker;
@@ -69,6 +68,10 @@ impl ConnectionWorker for TcpProtocolWorker {
                             })
                             .await;
 
+                        let mut interval = tokio::time::interval(polling_interval);
+                        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+                        adapter.start_cycle();
+
                         // Polling phase
                         loop {
                             tokio::select! {
@@ -80,7 +83,12 @@ impl ConnectionWorker for TcpProtocolWorker {
                                         break;
                                     }
                                 }
-                                _ = sleep(polling_interval) => {
+                                _ = async {
+                                    if adapter.is_cycle_complete() {
+                                        interval.tick().await;
+                                        adapter.start_cycle();
+                                    }
+                                } => {
                                     if let Some(request) = adapter.next_request() {
                                         let device_id_opt = adapter.current_device_id();
                                         let start_time = std::time::Instant::now();

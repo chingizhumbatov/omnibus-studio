@@ -9,6 +9,14 @@ pub trait ProtocolAdapter: Send + Sync {
     /// If the adapter has a request pending (e.g. polling a device), it returns the bytes.
     fn next_request(&mut self) -> Option<Vec<u8>>;
 
+    /// Checks if the adapter has finished its current polling cycle.
+    fn is_cycle_complete(&self) -> bool {
+        false
+    }
+
+    /// Resets the internal state to start a new polling cycle.
+    fn start_cycle(&mut self) {}
+
     /// Called by the transport worker when it receives bytes from the bus.
     /// The adapter parses the response and returns a list of updated tags along with their device_id.
     fn process_response(&mut self, payload: &[u8]) -> Result<Vec<(String, TagState)>>;

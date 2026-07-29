@@ -1,7 +1,6 @@
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::task::JoinHandle;
-use tokio::time::sleep;
 use tokio_serial::SerialPortBuilderExt;
 use tracing::info;
 
@@ -118,6 +117,10 @@ impl ConnectionWorker for SerialProtocolWorker {
             .take()
             .ok_or_else(|| CoreError::InvalidRequest("Adapter missing".into()))?;
 
+        let mut interval = tokio::time::interval(polling_interval);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        adapter.start_cycle();
+
         // Start the polling loop
         let handle = tokio::spawn(async move {
             loop {
@@ -129,7 +132,12 @@ impl ConnectionWorker for SerialProtocolWorker {
                             break;
                         }
                     }
-                    _ = sleep(polling_interval) => {
+                    _ = async {
+                        if adapter.is_cycle_complete() {
+                            interval.tick().await;
+                            adapter.start_cycle();
+                        }
+                    } => {
                         if let Some(request) = adapter.next_request() {
                             if stream.write_all(&request).await.is_ok() {
                                 let mut buf = vec![0u8; 1024];

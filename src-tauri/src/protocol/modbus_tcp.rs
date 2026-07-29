@@ -30,6 +30,7 @@ pub struct ModbusTcpAdapter {
     inflight_chunk: Option<PollChunk>,
     write_queue: std::collections::VecDeque<WriteTask>,
     inflight_write: Option<WriteTask>,
+    cycle_complete: bool,
 }
 
 impl ModbusTcpAdapter {
@@ -74,6 +75,7 @@ impl ModbusTcpAdapter {
             inflight_chunk: None,
             write_queue: std::collections::VecDeque::new(),
             inflight_write: None,
+            cycle_complete: false,
         }
     }
 
@@ -192,7 +194,7 @@ impl ProtocolAdapter for ModbusTcpAdapter {
         }
 
         // 2. Otherwise generate polling chunk
-        if self.chunks.is_empty() {
+        if self.chunks.is_empty() || self.cycle_complete {
             return None;
         }
 
@@ -220,10 +222,26 @@ impl ProtocolAdapter for ModbusTcpAdapter {
         match res {
             Ok(_) => {
                 self.inflight_chunk = Some(chunk);
-                self.current_chunk_idx = (self.current_chunk_idx + 1) % self.chunks.len();
+                self.current_chunk_idx += 1;
+                if self.current_chunk_idx >= self.chunks.len() {
+                    self.cycle_complete = true;
+                }
                 Some(buf)
             }
             Err(_) => None,
+        }
+    }
+
+    fn is_cycle_complete(&self) -> bool {
+        self.cycle_complete
+    }
+
+    fn start_cycle(&mut self) {
+        if !self.chunks.is_empty() {
+            self.current_chunk_idx = 0;
+            self.cycle_complete = false;
+        } else {
+            self.cycle_complete = true;
         }
     }
 
