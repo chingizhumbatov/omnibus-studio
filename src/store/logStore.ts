@@ -8,7 +8,7 @@ interface LogState {
   snifferFrames: SnifferFrame[];
   
   addSystemLog: (log: Omit<SystemLog, "id" | "timestamp">) => void;
-  addSnifferFrame: (frame: Omit<SnifferFrame, "id" | "timestamp">) => void;
+  addSnifferFrame: (frame: Omit<SnifferFrame, "id">) => void;
   clearSystemLogs: () => void;
   clearSnifferFrames: () => void;
 }
@@ -37,7 +37,8 @@ export const useLogStore = create<LogState>((set) => ({
     const newFrame: SnifferFrame = {
       ...frame,
       id: `sniff_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
+      // fallback to Date.now() if timestamp is not provided (should be provided by Rust)
+      timestamp: frame.timestamp || Date.now(),
     };
     
     // Ring buffer logic

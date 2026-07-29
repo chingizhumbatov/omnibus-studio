@@ -88,6 +88,7 @@ pub enum HubMessage {
         connection_id: String,
         direction: String,
         payload: Vec<u8>,
+        timestamp_ms: u64,
     },
 }
 
@@ -119,10 +120,12 @@ impl Clone for HubMessage {
                 connection_id,
                 direction,
                 payload,
+                timestamp_ms,
             } => HubMessage::ProtocolTrace {
                 connection_id: connection_id.clone(),
                 direction: direction.clone(),
                 payload: payload.clone(),
+                timestamp_ms: *timestamp_ms,
             },
             HubMessage::ConnectionStatus {
                 connection_id,
