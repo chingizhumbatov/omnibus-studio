@@ -52,27 +52,27 @@ export function AddChannelModal() {
           className="p-1 hover:bg-secondary text-muted-foreground hover:text-foreground rounded transition-colors"
           title="Add Channel"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3 h-3" />
         </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Logical Channel</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleAddChannel} className="space-y-4 py-4">
+        <form onSubmit={handleAddChannel} className="space-y-4 py-1.5">
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Channel Name</label>
+            <label className="text-[10px] font-medium">Channel Name</label>
             <input 
               name="name"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" 
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" 
               defaultValue={`Channel ${channels.length + 1}`} 
             />
           </div>
 
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Protocol</label>
+            <label className="text-[10px] font-medium">Protocol</label>
             <select 
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
               value={protocol}
               onChange={(e) => {
                 const newProto = e.target.value as ProtocolType;
@@ -90,9 +90,9 @@ export function AddChannelModal() {
           </div>
 
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Transport</label>
+            <label className="text-[10px] font-medium">Transport</label>
             <select 
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
               value={transport}
               onChange={(e) => setTransport(e.target.value as TransportType)}
             >
@@ -104,8 +104,8 @@ export function AddChannelModal() {
 
           {transport === "serial" && (
             <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">Baud Rate</label>
-              <select name="baudRate" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" defaultValue="9600">
+              <label className="text-[10px] font-medium">Baud Rate</label>
+              <select name="baudRate" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" defaultValue="9600">
                 <option value="9600">9600</option>
                 <option value="19200">19200</option>
                 <option value="38400">38400</option>
@@ -117,18 +117,18 @@ export function AddChannelModal() {
           {transport === "tcp" && (
             <div className="flex space-x-2">
               <div className="flex flex-col space-y-2 flex-1">
-                <label className="text-sm font-medium">IP Address</label>
-                <input name="ipAddress" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" defaultValue="127.0.0.1" />
+                <label className="text-[10px] font-medium">IP Address</label>
+                <input name="ipAddress" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" defaultValue="127.0.0.1" />
               </div>
               <div className="flex flex-col space-y-2 w-24">
-                <label className="text-sm font-medium">Port</label>
-                <input name="tcpPort" type="number" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" defaultValue={protocol === "mqtt" ? 1883 : 502} />
+                <label className="text-[10px] font-medium">Port</label>
+                <input name="tcpPort" type="number" className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" defaultValue={protocol === "mqtt" ? 1883 : 502} />
               </div>
             </div>
           )}
 
           <DialogFooter>
-            <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 mt-4">
+            <button type="submit" className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-[10px] font-medium hover:bg-primary/90 mt-4">
               Add Channel
             </button>
           </DialogFooter>

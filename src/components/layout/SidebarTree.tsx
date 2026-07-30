@@ -18,10 +18,10 @@ const StatusDot = ({ status, enabled = true }: { status: DeviceStatus, enabled?:
   };
   
   if (!enabled) {
-    return <div className="w-2 h-2 rounded-full mr-2 shrink-0 border border-zinc-600 bg-transparent" title="Disabled" />;
+    return <div className="w-2 h-2 rounded-full mr-1.5 shrink-0 border border-zinc-600 bg-transparent" title="Disabled" />;
   }
 
-  return <div className={cn("w-2 h-2 rounded-full mr-2 shrink-0", colors[status])} />;
+  return <div className={cn("w-2 h-2 rounded-full mr-1.5 shrink-0", colors[status])} />;
 };
 
 interface ContextMenuState {
@@ -47,7 +47,7 @@ const DeviceItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center pl-6 py-1.5 cursor-pointer text-sm group transition-colors select-none",
+        "flex items-center pl-5 py-1 cursor-pointer text-[10px] group transition-colors select-none",
         isSelected 
           ? "bg-primary/10 text-foreground border-r-2 border-primary" 
           : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground",
@@ -57,16 +57,16 @@ const DeviceItem = ({
       onContextMenu={(e) => onContextMenu(e, device)}
     >
       <StatusDot status={device.status} enabled={device.enabled} />
-      <Cpu className={cn("w-4 h-4 mr-2 transition-colors", isSelected ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
+      <Cpu className={cn("w-3 h-3 mr-1.5 transition-colors", isSelected ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
       <span className="flex-1 truncate">{device.name}</span>
       
       {protocol === "modbus" && (
-        <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-sm mr-2" title="Modbus Slave ID">
+        <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-sm mr-1.5" title="Modbus Slave ID">
           ID: {(device.config as any)?.slaveId}
         </span>
       )}
       {protocol === "mqtt" && (
-        <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-sm mr-2" title="MQTT Topic">
+        <span className="text-[10px] text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded-sm mr-1.5" title="MQTT Topic">
           MQTT
         </span>
       )}
@@ -92,7 +92,7 @@ const ChannelGroup = ({
     <div className="mb-1">
       <div 
         className={cn(
-          "flex items-center px-2 py-1.5 cursor-pointer text-sm font-medium group transition-colors select-none",
+          "flex items-center px-2 py-1 cursor-pointer text-[10px] font-medium group transition-colors select-none",
           isSelected 
             ? "bg-primary/10 text-foreground border-r-2 border-primary" 
             : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
@@ -107,7 +107,7 @@ const ChannelGroup = ({
             setIsOpen(!isOpen);
           }}
         >
-          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         </div>
         <StatusDot status={channel.status} />
         <span className="flex-1 truncate select-none">{channel.name}</span>
@@ -126,7 +126,7 @@ const ChannelGroup = ({
             />
           ))}
           {devices.length === 0 && (
-            <div className="pl-8 py-1.5 text-xs text-zinc-500 italic select-none">No devices</div>
+            <div className="pl-8 py-1 text-[10px] text-zinc-500 italic select-none">No devices</div>
           )}
         </div>
       )}
@@ -212,26 +212,26 @@ export function SidebarTree() {
 
   const renderChannelsHeader = () => (
     <div 
-      className="p-2 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10 cursor-pointer select-none group shrink-0"
+      className="p-1 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10 cursor-pointer select-none group shrink-0"
       onClick={() => setChannelsOpen(!channelsOpen)}
     >
       <div className="flex items-center gap-1">
-        {channelsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {channelsOpen ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+        <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Channels
         </h2>
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
         <AddChannelModal />
         <button className="p-1 hover:bg-secondary text-muted-foreground hover:text-foreground rounded transition-colors" title="Settings">
-          <Settings className="w-4 h-4" />
+          <Settings className="w-3 h-3" />
         </button>
       </div>
     </div>
   );
 
   const renderChannelsListContent = () => (
-    <div className="flex-1 overflow-y-auto py-2">
+    <div className="flex-1 overflow-y-auto py-1">
       {channels.map(channel => (
         <ChannelGroup 
           key={channel.id} 
@@ -241,7 +241,7 @@ export function SidebarTree() {
         />
       ))}
       {channels.length === 0 && (
-        <div className="p-4 text-center text-sm text-muted-foreground">
+        <div className="p-1 text-center text-[10px] text-muted-foreground">
           No channels configured. Click + to add one.
         </div>
       )}
@@ -250,12 +250,12 @@ export function SidebarTree() {
 
   const renderVirtualTagsHeader = () => (
     <div 
-      className="p-2 flex items-center justify-between group border-b border-border sticky top-0 bg-card z-10 cursor-pointer select-none shrink-0"
+      className="p-1 flex items-center justify-between group border-b border-border sticky top-0 bg-card z-10 cursor-pointer select-none shrink-0"
       onClick={() => setVirtualTagsOpen(!virtualTagsOpen)}
     >
       <div className="flex items-center gap-1">
-        {virtualTagsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        {virtualTagsOpen ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Virtual Tags
         </h3>
       </div>
@@ -274,18 +274,18 @@ export function SidebarTree() {
         }}
         title="Add Virtual Tag"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Plus className="w-3 h-3" />
       </button>
     </div>
   );
 
   const renderVirtualTagsListContent = () => (
-    <div className="flex-1 overflow-y-auto py-2 flex flex-col">
+    <div className="flex-1 overflow-y-auto py-1 flex flex-col">
        {virtualTags.map(vtag => (
           <div 
             key={vtag.id}
             className={cn(
-              "flex items-center pl-6 py-1.5 cursor-pointer text-sm group transition-colors select-none",
+              "flex items-center pl-5 py-1 cursor-pointer text-[10px] group transition-colors select-none",
               selectedVirtualTagId === vtag.id 
                 ? "bg-primary/10 text-foreground border-r-2 border-primary" 
                 : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
@@ -293,12 +293,12 @@ export function SidebarTree() {
             onClick={() => setSelectedVirtualTag(vtag.id)}
             onContextMenu={(e) => handleContextMenu(e, vtag, "virtual_tag")}
           >
-            <Calculator className={cn("w-3.5 h-3.5 mr-2 transition-colors", selectedVirtualTagId === vtag.id ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
+            <Calculator className={cn("w-3 h-3 mr-1.5 transition-colors", selectedVirtualTagId === vtag.id ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
             <span className="flex-1 truncate">{vtag.name}</span>
           </div>
        ))}
        {virtualTags.length === 0 && (
-          <div className="pl-6 py-1.5 text-xs text-zinc-500 italic select-none">No virtual tags</div>
+          <div className="pl-5 py-1 text-[10px] text-zinc-500 italic select-none">No virtual tags</div>
        )}
     </div>
   );
@@ -343,11 +343,11 @@ export function SidebarTree() {
       {/* Custom Context Menu */}
       {contextMenu && (
         <div 
-          className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px] text-sm text-popover-foreground overflow-hidden"
+          className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px] text-[10px] text-popover-foreground overflow-hidden"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()} // Prevent auto-close when clicking inside menu
         >
-          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground border-b border-border mb-1 truncate">
+          <div className="px-3 py-1 text-[10px] font-semibold text-muted-foreground border-b border-border mb-1 truncate">
             {contextMenu.node.name}
           </div>
           
@@ -355,49 +355,49 @@ export function SidebarTree() {
             <>
               {(contextMenu.node as DeviceNode).status === "offline" ? (
                 <button 
-                  className="w-full flex items-center px-3 py-1.5 hover:bg-secondary transition-colors text-left"
+                  className="w-full flex items-center px-3 py-1 hover:bg-secondary transition-colors text-left"
                   onClick={() => { handleConnect(contextMenu.node as DeviceNode, true); setContextMenu(null); }}
                 >
-                  <Plug className="w-4 h-4 mr-2" /> Connect
+                  <Plug className="w-3 h-3 mr-1.5" /> Connect
                 </button>
               ) : (
                 <button 
-                  className="w-full flex items-center px-3 py-1.5 hover:bg-secondary transition-colors text-left"
+                  className="w-full flex items-center px-3 py-1 hover:bg-secondary transition-colors text-left"
                   onClick={() => { handleConnect(contextMenu.node as DeviceNode, false); setContextMenu(null); }}
                 >
-                  <Unplug className="w-4 h-4 mr-2" /> Disconnect
+                  <Unplug className="w-3 h-3 mr-1.5" /> Disconnect
                 </button>
               )}
 
               {(contextMenu.node as DeviceNode).enabled ? (
                 <button 
-                  className="w-full flex items-center px-3 py-1.5 hover:bg-secondary transition-colors text-left"
+                  className="w-full flex items-center px-3 py-1 hover:bg-secondary transition-colors text-left"
                   onClick={() => { handleToggleEnable(contextMenu.node as DeviceNode); setContextMenu(null); }}
                 >
-                  <Square className="w-4 h-4 mr-2 text-yellow-500" /> Disable
+                  <Square className="w-3 h-3 mr-1.5 text-yellow-500" /> Disable
                 </button>
               ) : (
                 <button 
-                  className="w-full flex items-center px-3 py-1.5 hover:bg-secondary transition-colors text-left"
+                  className="w-full flex items-center px-3 py-1 hover:bg-secondary transition-colors text-left"
                   onClick={() => { handleToggleEnable(contextMenu.node as DeviceNode); setContextMenu(null); }}
                 >
-                  <Play className="w-4 h-4 mr-2 text-emerald-500" /> Enable
+                  <Play className="w-3 h-3 mr-1.5 text-emerald-500" /> Enable
                 </button>
               )}
             </>
           )}
 
           {contextMenu.type === "channel" && (
-            <div className="px-3 py-1 text-xs text-muted-foreground italic">Channel actions coming soon</div>
+            <div className="px-3 py-1 text-[10px] text-muted-foreground italic">Channel actions coming soon</div>
           )}
 
           <div className="w-full h-px bg-border my-1"></div>
 
           <button 
-            className="w-full flex items-center px-3 py-1.5 hover:bg-red-500/20 text-red-500 transition-colors text-left"
+            className="w-full flex items-center px-3 py-1 hover:bg-red-500/20 text-red-500 transition-colors text-left"
             onClick={() => { handleDelete(contextMenu.node, contextMenu.type); setContextMenu(null); }}
           >
-            <Trash2 className="w-4 h-4 mr-2" /> Delete
+            <Trash2 className="w-3 h-3 mr-1.5" /> Delete
           </button>
         </div>
       )}

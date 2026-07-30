@@ -54,20 +54,20 @@ export function AddDeviceModal({ channel, devicesCount }: AddDeviceModalProps) {
         <DialogHeader>
           <DialogTitle>Add Device to {channel.name}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleAddDevice} className="space-y-4 py-4">
+        <form onSubmit={handleAddDevice} className="space-y-4 py-1.5">
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Device Name</label>
+            <label className="text-[10px] font-medium">Device Name</label>
             <input 
               name="name"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" 
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" 
               defaultValue={`Device ${devicesCount + 1}`} 
             />
           </div>
 
           <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Protocol</label>
+            <label className="text-[10px] font-medium text-muted-foreground">Protocol</label>
             <input 
-              className="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm shadow-sm text-muted-foreground cursor-not-allowed uppercase" 
+              className="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-[10px] shadow-sm text-muted-foreground cursor-not-allowed uppercase" 
               value={channel.protocol} 
               disabled 
             />
@@ -75,12 +75,12 @@ export function AddDeviceModal({ channel, devicesCount }: AddDeviceModalProps) {
 
           {channel.protocol === "modbus" && (
             <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">Slave ID (1-247)</label>
+              <label className="text-[10px] font-medium">Slave ID (1-247)</label>
               <input 
                 name="slaveId"
                 type="number" 
                 min="1" max="247" 
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" 
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" 
                 defaultValue={devicesCount + 1} 
                 required
               />
@@ -89,10 +89,10 @@ export function AddDeviceModal({ channel, devicesCount }: AddDeviceModalProps) {
 
           {channel.protocol === "mqtt" && (
             <div className="flex flex-col space-y-2">
-              <label className="text-sm font-medium">Base Topic</label>
+              <label className="text-[10px] font-medium">Base Topic</label>
               <input 
                 name="baseTopic"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" 
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm" 
                 placeholder="e.g. factory/line1/plc" 
                 required
               />
@@ -100,7 +100,7 @@ export function AddDeviceModal({ channel, devicesCount }: AddDeviceModalProps) {
           )}
 
           <DialogFooter>
-            <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 mt-4">
+            <button type="submit" className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-[10px] font-medium hover:bg-primary/90 mt-4">
               Add Device
             </button>
           </DialogFooter>

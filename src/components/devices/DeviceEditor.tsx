@@ -181,15 +181,15 @@ export function DeviceEditor() {
   return (
     <div className="w-full h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border p-4">
+      <div className="flex items-center justify-between border-b border-border p-1">
         <div>
-          <h2 className="text-lg font-semibold flex items-center">
+          <h2 className="text-[10px] font-semibold flex items-center">
             {localDevice.name}
-            <span className="ml-3 px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-md font-mono uppercase">
+            <span className="ml-3 px-2 py-0.5 text-[10px] bg-secondary text-secondary-foreground rounded-md font-mono uppercase">
               {channel.protocol}
             </span>
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-[10px] text-muted-foreground mt-1">
             Connected via {channel.name}
           </p>
         </div>
@@ -197,19 +197,19 @@ export function DeviceEditor() {
           {localDevice.enabled ? (
             <button 
               onClick={handleToggleEnable}
-              className="flex items-center px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-sm font-medium rounded-md hover:bg-emerald-500/20 transition-colors"
+              className="flex items-center px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-medium rounded-md hover:bg-emerald-500/20 transition-colors"
               title="Device is Enabled. Click to Disable (Stops Polling)"
             >
-              <Play className="w-4 h-4 mr-2" />
+              <Play className="w-3 h-3 mr-1.5" />
               Enabled
             </button>
           ) : (
             <button 
               onClick={handleToggleEnable}
-              className="flex items-center px-3 py-1.5 bg-zinc-500/10 text-zinc-400 text-sm font-medium rounded-md hover:bg-zinc-500/20 transition-colors"
+              className="flex items-center px-3 py-1 bg-zinc-500/10 text-zinc-400 text-[10px] font-medium rounded-md hover:bg-zinc-500/20 transition-colors"
               title="Device is Disabled. Click to Enable (Starts Polling)"
             >
-              <Square className="w-4 h-4 mr-2" />
+              <Square className="w-3 h-3 mr-1.5" />
               Disabled
             </button>
           )}
@@ -221,12 +221,12 @@ export function DeviceEditor() {
               onClick={() => handleConnect(true)}
               disabled={!localDevice.enabled}
               className={cn(
-                "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                "flex items-center px-3 py-1 text-[10px] font-medium rounded-md transition-colors",
                 !localDevice.enabled ? "bg-secondary/50 text-secondary-foreground/50 cursor-not-allowed" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               )}
               title={!localDevice.enabled ? "Enable device first" : "Connect (Initialize Port)"}
             >
-              <Plug className="w-4 h-4 mr-2" />
+              <Plug className="w-3 h-3 mr-1.5" />
               Connect
             </button>
           ) : (
@@ -234,12 +234,12 @@ export function DeviceEditor() {
               onClick={() => handleConnect(false)}
               disabled={!localDevice.enabled}
               className={cn(
-                "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                "flex items-center px-3 py-1 text-[10px] font-medium rounded-md transition-colors",
                 !localDevice.enabled ? "bg-secondary/50 text-secondary-foreground/50 cursor-not-allowed" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               )}
               title="Disconnect (Close Port)"
             >
-              <Unplug className="w-4 h-4 mr-2" />
+              <Unplug className="w-3 h-3 mr-1.5" />
               Disconnect
             </button>
           )}
@@ -248,29 +248,29 @@ export function DeviceEditor() {
 
           <button 
             onClick={handleSave}
-            className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+            className={`flex items-center px-3 py-1 text-[10px] font-medium rounded-md transition-all duration-200 ${
               isSaved
                 ? "bg-emerald-600 text-white"
                 : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
           >
             {isSaved ? (
-              <><Check className="w-4 h-4 mr-2" />Saved!</>
+              <><Check className="w-3 h-3 mr-1.5" />Saved!</>
             ) : (
-              <><Save className="w-4 h-4 mr-2" />Save Changes</>
+              <><Save className="w-3 h-3 mr-1.5" />Save Changes</>
             )}
           </button>
           <button 
             onClick={() => setSelectedDevice(null)}
-            className="p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-colors ml-2"
+            className="p-1 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-colors ml-2"
           >
-            <X className="w-5 h-5" />
+            <X className="w-3 h-3" />
           </button>
         </div>
       </div>
       
       {/* Telemetry Bar */}
-      <div className="bg-[#111116] border-b border-border px-4 py-1.5 flex items-center justify-between text-[11px] font-mono text-zinc-400 select-none">
+      <div className="bg-[#111116] border-b border-border px-3 py-1 flex items-center justify-between text-[11px] font-mono text-zinc-400 select-none">
         <div className="flex items-center">
           <span>Requests: <span className="text-zinc-300">{telemetry?.requests || 0}</span></span>
           <span className="mx-2">·</span>
@@ -300,16 +300,16 @@ export function DeviceEditor() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-1 space-y-8">
         
         {/* General Settings */}
         <section>
-          <h3 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">General Configuration</h3>
-          <div className="grid grid-cols-3 gap-6">
+          <h3 className="text-[10px] font-medium text-muted-foreground mb-4 uppercase tracking-wider">General Configuration</h3>
+          <div className="grid grid-cols-3 gap-1.5">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Device Name</label>
+              <label className="text-[10px] font-medium">Device Name</label>
               <input 
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
                 value={localDevice.name}
                 onChange={e => setLocalDevice({ ...localDevice, name: e.target.value })}
               />
@@ -318,38 +318,38 @@ export function DeviceEditor() {
             {isModbus && (
               <>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Slave ID</label>
+                  <label className="text-[10px] font-medium">Slave ID</label>
                   <input 
                     type="number"
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
                     value={config.slaveId || 1}
                     onChange={e => setLocalDevice({ ...localDevice, config: { ...config, slaveId: Number(e.target.value) }})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Polling Rate (ms)</label>
+                  <label className="text-[10px] font-medium">Polling Rate (ms)</label>
                   <input 
                     type="number"
                     step="100"
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
                     value={config.pollingRateMs || 1000}
                     onChange={e => setLocalDevice({ ...localDevice, config: { ...config, pollingRateMs: Number(e.target.value) }})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Timeout (ms)</label>
+                  <label className="text-[10px] font-medium">Timeout (ms)</label>
                   <input 
                     type="number"
                     step="100"
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
                     value={config.timeoutMs || 500}
                     onChange={e => setLocalDevice({ ...localDevice, config: { ...config, timeoutMs: Number(e.target.value) }})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Byte Order (Endianness)</label>
+                  <label className="text-[10px] font-medium">Byte Order (Endianness)</label>
                   <select 
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-[10px] shadow-sm"
                     value={config.byteOrder || "ABCD"}
                     onChange={e => setLocalDevice({ ...localDevice, config: { ...config, byteOrder: e.target.value as Endianness }})}
                   >
@@ -368,25 +368,25 @@ export function DeviceEditor() {
         {isModbus && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Data Point Mapping (Registers)</h3>
+              <h3 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Data Point Mapping (Registers)</h3>
               <button 
                 onClick={handleAddTag}
-                className="flex items-center px-2 py-1 text-xs font-medium border border-border rounded-md hover:bg-secondary transition-colors"
+                className="flex items-center px-2 py-1 text-[10px] font-medium border border-border rounded-md hover:bg-secondary transition-colors"
               >
                 <Plus className="w-3 h-3 mr-1" /> Add Data Point
               </button>
             </div>
             
             <div className="border border-border rounded-md overflow-hidden">
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-[10px] text-left">
                 <thead className="bg-secondary/50 text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Data Point Name</th>
-                    <th className="px-4 py-2 font-medium">Register Type</th>
-                    <th className="px-4 py-2 font-medium">Address</th>
-                    <th className="px-4 py-2 font-medium">Data Type</th>
-                    <th className="px-4 py-2 font-medium">Value</th>
-                    <th className="px-4 py-2 font-medium w-10"></th>
+                    <th className="px-3 py-1 font-medium">Data Point Name</th>
+                    <th className="px-3 py-1 font-medium">Register Type</th>
+                    <th className="px-3 py-1 font-medium">Address</th>
+                    <th className="px-3 py-1 font-medium">Data Type</th>
+                    <th className="px-3 py-1 font-medium">Value</th>
+                    <th className="px-3 py-1 font-medium w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -394,14 +394,14 @@ export function DeviceEditor() {
                     const isOverlapping = overlappingTagIds.has(tag.id);
                     return (
                     <tr key={tag.id} className={cn("hover:bg-secondary/20", isOverlapping ? "bg-red-500/10" : "")}>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-1">
                         <input 
                           className="bg-transparent border-b border-transparent hover:border-border focus:border-primary outline-none w-full"
                           value={tag.name}
                           onChange={e => handleUpdateTag(tag.id, { name: e.target.value })}
                         />
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-1">
                         <select 
                           className="bg-transparent border-none outline-none w-full text-muted-foreground focus:text-foreground"
                           value={tag.registerType}
@@ -429,7 +429,7 @@ export function DeviceEditor() {
                           <option value="holding">Holding Register (4x)</option>
                         </select>
                       </td>
-                      <td className="px-4 py-2 relative">
+                      <td className="px-3 py-1 relative">
                         <div className="flex items-center">
                           <input 
                             type="number"
@@ -439,12 +439,12 @@ export function DeviceEditor() {
                           />
                           {isOverlapping && (
                             <span title="Address overlaps with another tag of the same type">
-                              <AlertCircle className="w-4 h-4 text-red-500 ml-2" />
+                              <AlertCircle className="w-3 h-3 text-red-500 ml-2" />
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-3 py-1">
                         <select 
                           className="bg-transparent border-none outline-none w-full text-muted-foreground focus:text-foreground"
                           value={tag.dataType}
@@ -463,7 +463,7 @@ export function DeviceEditor() {
                           )}
                         </select>
                       </td>
-                      <td className="px-4 py-2 font-mono text-emerald-400">
+                      <td className="px-3 py-1 font-mono text-emerald-400">
                         {editingTag === tag.id ? (
                           <input
                             type="text"
@@ -492,19 +492,19 @@ export function DeviceEditor() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-3 py-1 text-right">
                         <button 
                           onClick={() => handleRemoveTag(tag.id)}
                           className="text-muted-foreground hover:text-red-400 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </td>
                     </tr>
                   )})}
                   {(!config.tags || config.tags.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
+                      <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground italic">
                         No data points defined. Click "Add Data Point" to map registers.
                       </td>
                     </tr>

@@ -113,6 +113,16 @@ export const useUIStore = create<UIState>()(
         devices: state.devices,
         virtualTags: state.virtualTags,
       }),
+      merge: (persistedState: any, currentState) => {
+        // Reset connection status on app load because backend connections do not persist across restarts
+        const state = persistedState as Partial<UIState>;
+        return {
+          ...currentState,
+          ...state,
+          channels: (state.channels || []).map(c => ({ ...c, status: "offline" })),
+          devices: (state.devices || []).map(d => ({ ...d, status: "offline" })),
+        };
+      },
     }
   )
 );

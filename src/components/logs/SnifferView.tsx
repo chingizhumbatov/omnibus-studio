@@ -91,15 +91,15 @@ export function SnifferView() {
   return (
     <div className="h-full w-full bg-[#0d0d0d] font-mono text-[11px] flex flex-col relative overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center px-4 py-2 bg-zinc-900/80 border-b border-zinc-800 shrink-0">
+      <div className="flex items-center px-3 py-1 bg-zinc-900/80 border-b border-zinc-800 shrink-0">
         <button 
           onClick={() => setIsPaused(!isPaused)}
           className={cn(
-            "flex items-center px-3 py-1.5 rounded text-xs transition-colors font-semibold",
+            "flex items-center px-3 py-1 rounded text-[10px] transition-colors font-semibold",
             isPaused ? "bg-amber-500/20 text-amber-400" : "hover:bg-zinc-800 text-zinc-300 hover:text-white"
           )}
         >
-          {isPaused ? <Play className="w-4 h-4 mr-1.5" /> : <Pause className="w-4 h-4 mr-1.5" />}
+          {isPaused ? <Play className="w-3 h-3 mr-1.5" /> : <Pause className="w-3 h-3 mr-1.5" />}
           {isPaused ? "Paused" : "Pause"}
         </button>
         
@@ -107,16 +107,16 @@ export function SnifferView() {
         
         <button 
           onClick={() => setFrames([])}
-          className="flex items-center px-3 py-1.5 hover:bg-zinc-800 rounded text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium"
+          className="flex items-center px-3 py-1 hover:bg-zinc-800 rounded text-[10px] text-zinc-400 hover:text-red-400 transition-colors font-medium"
         >
-          <Trash2 className="w-4 h-4 mr-1.5" />
+          <Trash2 className="w-3 h-3 mr-1.5" />
           Clear
         </button>
 
         <div className="w-px h-5 bg-zinc-800 mx-4"></div>
 
-        <div className="flex items-center bg-zinc-950 rounded px-3 py-1.5 border border-zinc-800 focus-within:border-primary/50 transition-colors">
-          <Filter className="w-3.5 h-3.5 text-zinc-500 mr-2" />
+        <div className="flex items-center bg-zinc-950 rounded px-3 py-1 border border-zinc-800 focus-within:border-primary/50 transition-colors">
+          <Filter className="w-3 h-3 text-zinc-500 mr-1.5" />
           <input 
             type="text" 
             placeholder="Filter connection ID..." 
@@ -133,7 +133,7 @@ export function SnifferView() {
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center px-4 py-2 bg-zinc-900/40 border-b border-zinc-800/80 text-zinc-500 font-semibold tracking-wider text-[10px] select-none uppercase">
+      <div className="flex items-center px-3 py-1 bg-zinc-900/40 border-b border-zinc-800/80 text-zinc-500 font-semibold tracking-wider text-[10px] select-none uppercase">
         <div className="w-40 shrink-0">Timestamp</div>
         <div className="w-40 shrink-0 pr-4">Connection</div>
         <div className="w-12 shrink-0">Dir</div>
@@ -173,7 +173,7 @@ export function SnifferView() {
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 className={cn(
-                  "flex items-center px-4 hover:bg-white/5 transition-colors group leading-tight border-b border-zinc-800/30",
+                  "flex items-center px-3 hover:bg-white/5 transition-colors group leading-tight border-b border-zinc-800/30",
                   frame.direction === "tx" ? "bg-emerald-500/[0.02]" : "bg-cyan-500/[0.02]"
                 )}
               >

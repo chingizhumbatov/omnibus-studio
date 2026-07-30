@@ -3,11 +3,11 @@ import { Activity, Database, Network, Cpu, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const activities: { id: ActivityPanel; icon: React.ReactNode; label: string }[] = [
-  { id: "devices", icon: <Network className="w-5 h-5" />, label: "Ports & Devices" },
-  { id: "datahub", icon: <Database className="w-5 h-5" />, label: "Data Hub" },
-  { id: "sniffer", icon: <Activity className="w-5 h-5" />, label: "Sniffer" },
-  { id: "ai", icon: <Cpu className="w-5 h-5" />, label: "AI Analyst" },
-  { id: "settings", icon: <Settings className="w-5 h-5" />, label: "Settings" },
+  { id: "devices", icon: <Network className="w-3 h-3" />, label: "Ports & Devices" },
+  { id: "datahub", icon: <Database className="w-3 h-3" />, label: "Data Hub" },
+  { id: "sniffer", icon: <Activity className="w-3 h-3" />, label: "Sniffer" },
+  { id: "ai", icon: <Cpu className="w-3 h-3" />, label: "AI Analyst" },
+  { id: "settings", icon: <Settings className="w-3 h-3" />, label: "Settings" },
 ];
 
 export function ActivityBar() {
@@ -24,7 +24,7 @@ export function ActivityBar() {
   };
 
   return (
-    <div className="flex flex-col items-center w-12 bg-background border-r border-border py-2 space-y-4 shrink-0">
+    <div className="flex flex-col items-center w-12 bg-background border-r border-border py-1 space-y-4 shrink-0">
       {activities.map((act) => {
         const isActive = activeActivity === act.id;
         return (
@@ -33,7 +33,7 @@ export function ActivityBar() {
             onClick={() => handleActivityClick(act.id)}
             title={act.label}
             className={cn(
-              "p-2 rounded-md transition-colors",
+              "p-1 rounded-md transition-colors",
               isActive ? "text-primary bg-secondary/50" : "text-muted-foreground hover:text-primary hover:bg-secondary/30"
             )}
           >

@@ -23,7 +23,7 @@ export function Workspace() {
       <div className="absolute top-4 right-4 z-10 flex bg-card border border-border rounded-md shadow-sm overflow-hidden">
         <button
           onClick={() => setActiveMode("operator")}
-          className={`px-4 py-1.5 text-xs font-medium transition-colors ${
+          className={`px-3 py-1 text-[10px] font-medium transition-colors ${
             activeMode === "operator" 
               ? "bg-primary text-primary-foreground" 
               : "text-muted-foreground hover:bg-secondary/50"
@@ -33,7 +33,7 @@ export function Workspace() {
         </button>
         <button
           onClick={() => setActiveMode("engineer")}
-          className={`px-4 py-1.5 text-xs font-medium transition-colors ${
+          className={`px-3 py-1 text-[10px] font-medium transition-colors ${
             activeMode === "engineer" 
               ? "bg-primary text-primary-foreground" 
               : "text-muted-foreground hover:bg-secondary/50"

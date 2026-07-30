@@ -25,7 +25,7 @@ export function SystemLogView() {
     <div className="h-full w-full bg-[#0d0d0d] font-mono text-[11px] flex flex-col">
       <div 
         ref={parentRef} 
-        className="flex-1 overflow-auto p-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
+        className="flex-1 overflow-auto p-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
       >
         <div
           style={{

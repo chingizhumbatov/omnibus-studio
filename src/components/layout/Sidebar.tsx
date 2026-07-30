@@ -12,13 +12,13 @@ export function Sidebar() {
         <SidebarTree />
       ) : (
         <>
-          <div className="p-3 border-b border-border">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="p-1 border-b border-border">
+            <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
               {activeActivity}
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            <p className="text-sm text-muted-foreground">Tree view for {activeActivity}</p>
+          <div className="flex-1 overflow-y-auto p-1">
+            <p className="text-[10px] text-muted-foreground">Tree view for {activeActivity}</p>
           </div>
         </>
       )}

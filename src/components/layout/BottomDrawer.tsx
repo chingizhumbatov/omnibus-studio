@@ -30,11 +30,11 @@ export function BottomDrawer() {
   if (!isBottomDrawerOpen) {
     return (
       <div 
-        className="h-8 border-t border-border bg-background flex items-center px-4 cursor-pointer hover:bg-secondary/50 transition-colors"
+        className="h-8 border-t border-border bg-background flex items-center px-3 cursor-pointer hover:bg-secondary/50 transition-colors"
         onClick={() => setBottomDrawerOpen(true)}
       >
-        <Terminal className="w-4 h-4 mr-2 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">Output & Messages</span>
+        <Terminal className="w-3 h-3 mr-1.5 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">Output & Messages</span>
       </div>
     );
   }
@@ -47,7 +47,7 @@ export function BottomDrawer() {
         return <SnifferView />;
       case "alarms":
         return (
-          <div className="h-full w-full flex items-center justify-center text-zinc-600 bg-[#0d0d0d] font-mono text-sm select-none">
+          <div className="h-full w-full flex items-center justify-center text-zinc-600 bg-[#0d0d0d] font-mono text-[10px] select-none">
             No active alarms. System normal.
           </div>
         );
@@ -64,31 +64,31 @@ export function BottomDrawer() {
           <button
             onClick={() => setActiveTab("logs")}
             className={cn(
-              "flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-r border-border",
+              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
               activeTab === "logs" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
             )}
           >
-            <Terminal className="w-4 h-4 mr-2" />
+            <Terminal className="w-3 h-3 mr-1.5" />
             System Logs
           </button>
           <button
             onClick={() => setActiveTab("sniffer")}
             className={cn(
-              "flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-r border-border",
+              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
               activeTab === "sniffer" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
             )}
           >
-            <Activity className="w-4 h-4 mr-2" />
+            <Activity className="w-3 h-3 mr-1.5" />
             Protocol Sniffer
           </button>
           <button
             onClick={() => setActiveTab("alarms")}
             className={cn(
-              "flex items-center px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-r border-border",
+              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
               activeTab === "alarms" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
             )}
           >
-            <AlertTriangle className="w-4 h-4 mr-2" />
+            <AlertTriangle className="w-3 h-3 mr-1.5" />
             Alarms
           </button>
         </div>
@@ -97,27 +97,27 @@ export function BottomDrawer() {
         <div className="flex items-center space-x-1">
           <button 
             onClick={generateDummyLogs}
-            className="p-1.5 text-muted-foreground hover:text-emerald-400 hover:bg-secondary rounded-md transition-colors"
+            className="p-1 text-muted-foreground hover:text-emerald-400 hover:bg-secondary rounded-md transition-colors"
             title="Generate Dummy Data (+50)"
           >
-            <Bug className="w-4 h-4" />
+            <Bug className="w-3 h-3" />
           </button>
           <button 
             onClick={() => {
               if (activeTab === "logs") clearSystemLogs();
               // sniffer clears its own logs via local state now
             }}
-            className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-secondary rounded-md transition-colors"
+            className="p-1 text-muted-foreground hover:text-red-400 hover:bg-secondary rounded-md transition-colors"
             title="Clear Current View"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3 h-3" />
           </button>
           <div className="w-px h-4 bg-border mx-1"></div>
           <button 
             onClick={() => setBottomDrawerOpen(false)}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </button>
         </div>
       </div>

@@ -90,59 +90,59 @@ export function VirtualTagEditor() {
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-md text-primary">
-            <Calculator className="w-5 h-5" />
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1 bg-primary/10 rounded-md text-primary">
+            <Calculator className="w-3 h-3" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight">Virtual Tag Configuration</h2>
-            <p className="text-sm text-muted-foreground">ID: {draft.id}</p>
+            <h2 className="text-[10px] font-semibold tracking-tight">Virtual Tag Configuration</h2>
+            <p className="text-[10px] text-muted-foreground">ID: {draft.id}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <button 
             onClick={handleDelete}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-medium text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
           >
-            <Trash2 className="w-4 h-4" /> Delete
+            <Trash2 className="w-3 h-3" /> Delete
           </button>
           <button 
             onClick={handleSave}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
           >
-            <Save className="w-4 h-4" /> Save Changes
+            <Save className="w-3 h-3" /> Save Changes
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-1">
         <div className="max-w-3xl mx-auto space-y-8">
           
           {/* General Settings */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <Database className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-1.5 pb-2 border-b border-border">
+              <Database className="w-3 h-3 text-primary" />
               <h3 className="font-medium">General Settings</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-1.5">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Tag Name</label>
+                <label className="text-[10px] font-medium text-muted-foreground">Tag Name</label>
                 <input 
                   type="text" 
                   value={draft.name}
                   onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="w-full bg-secondary/50 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-secondary/50 border border-border rounded-md px-3 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Data Type</label>
+                <label className="text-[10px] font-medium text-muted-foreground">Data Type</label>
                 <select
                   value={draft.data_type}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   onChange={(e) => setDraft({ ...draft, data_type: e.target.value as any })}
-                  className="w-full bg-secondary/50 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-secondary/50 border border-border rounded-md px-3 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="Float32">Float32</option>
                   <option value="Float64">Float64</option>
@@ -158,13 +158,13 @@ export function VirtualTagEditor() {
           {/* Variables Mapping */}
           <section className="space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-1.5">
+                <Code2 className="w-3 h-3 text-primary" />
                 <h3 className="font-medium">Variables Mapping</h3>
               </div>
               <button 
                 onClick={handleAddSource}
-                className="text-xs font-medium text-primary hover:text-primary/80"
+                className="text-[10px] font-medium text-primary hover:text-primary/80"
               >
                 + Add Variable
               </button>
@@ -172,9 +172,9 @@ export function VirtualTagEditor() {
             
             <div className="space-y-3">
               {Object.entries(draft.sources || {}).map(([varName, sourceTagId]) => (
-                <div key={varName} className="flex items-center gap-3 bg-secondary/30 p-3 rounded-md border border-border/50">
+                <div key={varName} className="flex items-center gap-1.5 bg-secondary/30 p-1 rounded-md border border-border/50">
                   <div className="space-y-1 flex-1">
-                    <label className="text-xs font-medium text-muted-foreground">Variable in Expression</label>
+                    <label className="text-[10px] font-medium text-muted-foreground">Variable in Expression</label>
                     <input 
                       type="text"
                       value={varName}
@@ -186,18 +186,18 @@ export function VirtualTagEditor() {
                         newSources[newName] = val;
                         setDraft({ ...draft, sources: newSources });
                       }}
-                      className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm"
+                      className="w-full bg-background border border-border rounded-md px-2 py-1 text-[10px]"
                       placeholder="e.g. T1"
                     />
                   </div>
                   <div className="space-y-1 flex-[2]">
-                    <label className="text-xs font-medium text-muted-foreground">Source Tag ID</label>
+                    <label className="text-[10px] font-medium text-muted-foreground">Source Tag ID</label>
                     <input 
                       type="text"
                       list={`tag-list-${varName}`}
                       value={sourceTagId}
                       onChange={(e) => handleSourceChange(varName, e.target.value)}
-                      className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm"
+                      className="w-full bg-background border border-border rounded-md px-2 py-1 text-[10px]"
                       placeholder="Search or type ID..."
                     />
                     <datalist id={`tag-list-${varName}`}>
@@ -210,15 +210,15 @@ export function VirtualTagEditor() {
                   </div>
                   <button 
                     onClick={() => handleRemoveSource(varName)}
-                    className="mt-5 p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                    className="mt-5 p-1 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
               ))}
               
               {Object.keys(draft.sources || {}).length === 0 && (
-                <p className="text-sm text-muted-foreground italic text-center py-4">
+                <p className="text-[10px] text-muted-foreground italic text-center py-1.5">
                   No variables defined. Add a variable to use it in your expression.
                 </p>
               )}
@@ -227,8 +227,8 @@ export function VirtualTagEditor() {
 
           {/* Expression */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-border">
-              <Calculator className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-1.5 pb-2 border-b border-border">
+              <Calculator className="w-3 h-3 text-primary" />
               <h3 className="font-medium">Expression</h3>
             </div>
             
@@ -237,10 +237,10 @@ export function VirtualTagEditor() {
                 value={draft.expression}
                 onChange={(e) => setDraft({ ...draft, expression: e.target.value })}
                 rows={4}
-                className="w-full bg-secondary/50 border border-border rounded-md px-4 py-3 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                className="w-full bg-secondary/50 border border-border rounded-md px-3 py-1 font-mono text-[10px] focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
                 placeholder="e.g. (T1 + T2) / 2"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground">
                 Enter an expression using the variables defined above. Supported operators: +, -, *, /, %, ^, ==, !=, &gt;, &lt;, &gt;=, &lt;=, &&, ||, !
               </p>
             </div>
