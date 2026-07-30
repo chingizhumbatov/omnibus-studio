@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ChannelNode, DeviceNode } from "@/core/contracts/devices";
+import { VirtualTagConfig } from "@/core/contracts";
 
 export type WorkspaceMode = "operator" | "engineer";
 export type ActivityPanel = "devices" | "datahub" | "sniffer" | "ai" | "settings";
@@ -22,8 +23,10 @@ interface UIState {
 
   channels: ChannelNode[];
   devices: DeviceNode[];
+  virtualTags: VirtualTagConfig[];
   selectedDeviceId: string | null;
   selectedChannelId: string | null;
+  selectedVirtualTagId: string | null;
   
   addChannel: (channel: ChannelNode) => void;
   updateChannel: (id: string, updates: Partial<ChannelNode>) => void;
@@ -35,6 +38,11 @@ interface UIState {
   setSelectedDevice: (id: string | null) => void;
   updateDevice: (id: string, updates: Partial<DeviceNode>) => void;
   updateDevicesInChannel: (channelId: string, updates: Partial<DeviceNode>) => void;
+  
+  addVirtualTag: (tag: VirtualTagConfig) => void;
+  removeVirtualTag: (id: string) => void;
+  updateVirtualTag: (id: string, updates: Partial<VirtualTagConfig>) => void;
+  setSelectedVirtualTag: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -56,8 +64,10 @@ export const useUIStore = create<UIState>()(
 
       channels: [],
       devices: [],
+      virtualTags: [],
       selectedDeviceId: null,
       selectedChannelId: null,
+      selectedVirtualTagId: null,
       
       addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
       updateChannel: (id, updates) => set((state) => ({
@@ -69,7 +79,7 @@ export const useUIStore = create<UIState>()(
         selectedChannelId: state.selectedChannelId === id ? null : state.selectedChannelId,
         selectedDeviceId: state.devices.find(d => d.channelId === id && d.id === state.selectedDeviceId) ? null : state.selectedDeviceId,
       })),
-      setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null }),
+      setSelectedChannel: (id) => set({ selectedChannelId: id, selectedDeviceId: null, selectedVirtualTagId: null }),
       
       addDevice: (device) => set((state) => ({ devices: [...state.devices, device] })),
       removeDevice: (id) => set((state) => ({ 
@@ -77,13 +87,23 @@ export const useUIStore = create<UIState>()(
         selectedDeviceId: state.selectedDeviceId === id ? null : state.selectedDeviceId 
       })),
 
-      setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null }),
+      setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null, selectedVirtualTagId: null }),
       updateDevice: (id, updates) => set((state) => ({
         devices: state.devices.map(dev => dev.id === id ? { ...dev, ...updates } : dev)
       })),
       updateDevicesInChannel: (channelId, updates) => set((state) => ({
         devices: state.devices.map(dev => dev.channelId === channelId ? { ...dev, ...updates } : dev)
       })),
+      
+      addVirtualTag: (tag) => set((state) => ({ virtualTags: [...state.virtualTags, tag] })),
+      removeVirtualTag: (id) => set((state) => ({ 
+        virtualTags: state.virtualTags.filter(t => t.id !== id),
+        selectedVirtualTagId: state.selectedVirtualTagId === id ? null : state.selectedVirtualTagId 
+      })),
+      updateVirtualTag: (id, updates) => set((state) => ({
+        virtualTags: state.virtualTags.map(t => t.id === id ? { ...t, ...updates } : t)
+      })),
+      setSelectedVirtualTag: (id) => set({ selectedVirtualTagId: id, selectedDeviceId: null, selectedChannelId: null }),
     }),
     {
       name: "omnibus-ui-store",
@@ -91,6 +111,7 @@ export const useUIStore = create<UIState>()(
       partialize: (state) => ({
         channels: state.channels,
         devices: state.devices,
+        virtualTags: state.virtualTags,
       }),
     }
   )

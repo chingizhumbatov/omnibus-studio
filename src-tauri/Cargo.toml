@@ -30,4 +30,4 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 tracing-appender = "0.2.5"
 tokio-serial = "5.5.0"
 rmodbus = "0.12.2"
-
+evalexpr = "13.1.0"

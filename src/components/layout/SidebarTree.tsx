@@ -1,8 +1,9 @@
 import { useUIStore } from "@/store/uiStore";
 import { useLogStore } from "@/store/logStore";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
-import { Cpu, Settings, Play, Square, Plug, Unplug, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Cpu, Settings, Play, Square, Plug, Unplug, Trash2, ChevronRight, ChevronDown, Plus, Calculator } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { cn } from "@/lib/utils";
 import { ChannelNode, DeviceNode, DeviceStatus, ProtocolType } from "@/core/contracts/devices";
 import { AddDeviceModal } from "@/components/devices/AddDeviceModal";
@@ -26,8 +27,9 @@ const StatusDot = ({ status, enabled = true }: { status: DeviceStatus, enabled?:
 interface ContextMenuState {
   x: number;
   y: number;
-  node: DeviceNode | ChannelNode;
-  type: "device" | "channel";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  node: DeviceNode | ChannelNode | any;
+  type: "device" | "channel" | "virtual_tag";
 }
 
 const DeviceItem = ({ 
@@ -140,11 +142,19 @@ export function SidebarTree() {
     removeChannel, 
     updateDevice,
     updateChannel,
-    updateDevicesInChannel
+    updateDevicesInChannel,
+    virtualTags,
+    selectedVirtualTagId,
+    setSelectedVirtualTag,
+    addVirtualTag,
+    removeVirtualTag
   } = useUIStore();
   const { addSystemLog } = useLogStore();
   
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  
+  const [channelsOpen, setChannelsOpen] = useState(true);
+  const [virtualTagsOpen, setVirtualTagsOpen] = useState(true);
 
   useEffect(() => {
     const handleClick = () => setContextMenu(null);
@@ -152,8 +162,9 @@ export function SidebarTree() {
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  const handleContextMenu = (e: React.MouseEvent, node: DeviceNode | ChannelNode, type: "device" | "channel") => {
+  const handleContextMenu = (e: React.MouseEvent, node: any, type: "device" | "channel" | "virtual_tag") => {
     e.preventDefault();
+    e.stopPropagation();
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -185,45 +196,149 @@ export function SidebarTree() {
     }
   };
 
-  const handleDelete = (node: DeviceNode | ChannelNode, type: "device" | "channel") => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDelete = (node: DeviceNode | ChannelNode | any, type: "device" | "channel" | "virtual_tag") => {
     if (type === "device") {
       removeDevice(node.id);
       addSystemLog({ level: "warn", source: "ui", message: `Device '${node.name}' deleted` });
-    } else {
+    } else if (type === "channel") {
       removeChannel(node.id);
       addSystemLog({ level: "warn", source: "ui", message: `Channel '${node.name}' and all its devices deleted` });
+    } else if (type === "virtual_tag") {
+      removeVirtualTag(node.id);
+      addSystemLog({ level: "warn", source: "ui", message: `Virtual Tag '${node.name}' deleted` });
     }
   };
 
-  return (
-    <div className="flex flex-col h-full relative">
-      <div className="p-2 border-b border-border flex items-center justify-between">
+  const renderChannelsHeader = () => (
+    <div 
+      className="p-2 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10 cursor-pointer select-none group shrink-0"
+      onClick={() => setChannelsOpen(!channelsOpen)}
+    >
+      <div className="flex items-center gap-1">
+        {channelsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Channels
         </h2>
-        <div className="flex gap-1">
-          <AddChannelModal />
-          <button className="p-1 hover:bg-secondary text-muted-foreground hover:text-foreground rounded transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
+      </div>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+        <AddChannelModal />
+        <button className="p-1 hover:bg-secondary text-muted-foreground hover:text-foreground rounded transition-colors" title="Settings">
+          <Settings className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderChannelsListContent = () => (
+    <div className="flex-1 overflow-y-auto py-2">
+      {channels.map(channel => (
+        <ChannelGroup 
+          key={channel.id} 
+          channel={channel} 
+          devices={devices.filter(d => d.channelId === channel.id)}
+          onContextMenu={handleContextMenu}
+        />
+      ))}
+      {channels.length === 0 && (
+        <div className="p-4 text-center text-sm text-muted-foreground">
+          No channels configured. Click + to add one.
         </div>
+      )}
+    </div>
+  );
+
+  const renderVirtualTagsHeader = () => (
+    <div 
+      className="p-2 flex items-center justify-between group border-b border-border sticky top-0 bg-card z-10 cursor-pointer select-none shrink-0"
+      onClick={() => setVirtualTagsOpen(!virtualTagsOpen)}
+    >
+      <div className="flex items-center gap-1">
+        {virtualTagsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Virtual Tags
+        </h3>
       </div>
-      
-      <div className="flex-1 overflow-y-auto py-2">
-        {channels.map(channel => (
-          <ChannelGroup 
-            key={channel.id} 
-            channel={channel} 
-            devices={devices.filter(d => d.channelId === channel.id)}
-            onContextMenu={handleContextMenu}
-          />
-        ))}
-        {channels.length === 0 && (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            No channels configured. Click + to add one.
+      <button 
+        className="p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary text-muted-foreground hover:text-foreground rounded"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!virtualTagsOpen) setVirtualTagsOpen(true);
+          addVirtualTag({
+            id: `vtag_${Date.now()}`,
+            name: 'New Virtual Tag',
+            data_type: 'Float32',
+            sources: {},
+            expression: '0',
+          });
+        }}
+        title="Add Virtual Tag"
+      >
+        <Plus className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+
+  const renderVirtualTagsListContent = () => (
+    <div className="flex-1 overflow-y-auto py-2 flex flex-col">
+       {virtualTags.map(vtag => (
+          <div 
+            key={vtag.id}
+            className={cn(
+              "flex items-center pl-6 py-1.5 cursor-pointer text-sm group transition-colors select-none",
+              selectedVirtualTagId === vtag.id 
+                ? "bg-primary/10 text-foreground border-r-2 border-primary" 
+                : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setSelectedVirtualTag(vtag.id)}
+            onContextMenu={(e) => handleContextMenu(e, vtag, "virtual_tag")}
+          >
+            <Calculator className={cn("w-3.5 h-3.5 mr-2 transition-colors", selectedVirtualTagId === vtag.id ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
+            <span className="flex-1 truncate">{vtag.name}</span>
           </div>
-        )}
-      </div>
+       ))}
+       {virtualTags.length === 0 && (
+          <div className="pl-6 py-1.5 text-xs text-zinc-500 italic select-none">No virtual tags</div>
+       )}
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full relative bg-background">
+      {renderChannelsHeader()}
+      
+      {!channelsOpen && !virtualTagsOpen && (
+        renderVirtualTagsHeader()
+      )}
+
+      {channelsOpen && !virtualTagsOpen && (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {renderChannelsListContent()}
+          {renderVirtualTagsHeader()}
+        </div>
+      )}
+
+      {!channelsOpen && virtualTagsOpen && (
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {renderVirtualTagsHeader()}
+          {renderVirtualTagsListContent()}
+        </div>
+      )}
+
+      {channelsOpen && virtualTagsOpen && (
+        <PanelGroup direction="vertical" autoSaveId="sidebar-panels" className="flex-1">
+          <Panel defaultSize={60} minSize={20} className="flex flex-col">
+            {renderChannelsListContent()}
+          </Panel>
+          
+          <PanelResizeHandle className="h-1 w-full bg-border hover:bg-primary transition-colors cursor-row-resize z-50 shrink-0" />
+          
+          <Panel defaultSize={40} minSize={20} className="flex flex-col">
+            {renderVirtualTagsHeader()}
+            {renderVirtualTagsListContent()}
+          </Panel>
+        </PanelGroup>
+      )}
 
       {/* Custom Context Menu */}
       {contextMenu && (

@@ -82,11 +82,21 @@ export interface DeviceProfile {
   tags: TagConfig[];
 }
 
+export interface VirtualTagConfig {
+  id: string;
+  name: string;
+  description?: string | null;
+  data_type: DataType;
+  sources: Record<string, string>;
+  expression: string;
+}
+
 export interface WorkspaceSession {
   session_id: string;
   ui_throttle_ms: number;
   connections: ConnectionConfig[];
   profiles: DeviceProfile[];
+  virtual_tags: VirtualTagConfig[];
 }
 
 export type TrafficDirection = 'tx' | 'rx';

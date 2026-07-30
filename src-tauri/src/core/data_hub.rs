@@ -3,11 +3,17 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::{broadcast, mpsc};
 use tokio::time::{interval, Duration};
 use tracing::{error, info, warn};
+use evalexpr::ContextWithMutableVariables;
 
 use super::messages::{HubMessage, SnifferMessage, TagState};
 use crate::protocol::ipc::TagsUpdatedEvent;
 
 const RING_BUFFER_SIZE: usize = 10_000;
+
+struct CompiledVirtualTag {
+    config: crate::workspace::session::VirtualTagConfig,
+    ast: evalexpr::Node,
+}
 
 /// The central in-memory state repository (Tag Dictionary).
 pub struct DataHub {
@@ -26,6 +32,9 @@ pub struct DataHub {
 
     /// Internal set of devices whose telemetry has been updated since the last UI emission.
     dirty_telemetry: HashSet<String>,
+
+    /// Compiled virtual tags for fast evaluation.
+    virtual_tags: Vec<CompiledVirtualTag>,
 
 
     /// Broadcast channel for out-of-tree plugins, sniffer, and AI integrations.
@@ -52,6 +61,7 @@ impl DataHub {
             dirty_tags: HashSet::new(),
             telemetry: HashMap::new(),
             dirty_telemetry: HashSet::new(),
+            virtual_tags: Vec::new(),
             event_bus,
             sniffer_bus,
         }
@@ -135,6 +145,20 @@ impl DataHub {
                 // Ignore send error — the caller may have timed out.
                 let _ = responder.send(history);
             }
+            HubMessage::ApplyVirtualTags { ref tags } => {
+                let _ = self.event_bus.send(msg.clone());
+                self.virtual_tags.clear();
+                for config in tags {
+                    match evalexpr::build_operator_tree(&config.expression) {
+                        Ok(ast) => {
+                            self.virtual_tags.push(CompiledVirtualTag { config: config.clone(), ast });
+                        }
+                        Err(e) => {
+                            error!("Failed to compile virtual tag '{}': {}", config.id, e);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -160,7 +184,91 @@ impl DataHub {
         updates
     }
 
+    pub fn evaluate_virtual_tags(&mut self) {
+        if self.virtual_tags.is_empty() {
+            return;
+        }
 
+        let mut new_updates = Vec::new();
+        
+        for vtag in &self.virtual_tags {
+            let mut needs_eval = false;
+            for source_tag_id in vtag.config.sources.values() {
+                if self.dirty_tags.contains(source_tag_id) {
+                    needs_eval = true;
+                    break;
+                }
+            }
+            
+            if !needs_eval {
+                continue;
+            }
+
+            let mut context = evalexpr::HashMapContext::new();
+            let mut all_sources_available = true;
+
+            for (var_name, source_tag_id) in &vtag.config.sources {
+                if let Some(history) = self.tag_history.get(source_tag_id) {
+                    if let Some(state) = history.back() {
+                        let eval_val = match &state.value {
+                            crate::core::messages::TagValue::Integer(v) => evalexpr::Value::Int(*v),
+                            crate::core::messages::TagValue::Float(v) => evalexpr::Value::Float(*v),
+                            crate::core::messages::TagValue::String(v) => evalexpr::Value::String(v.clone()),
+                            crate::core::messages::TagValue::Raw(_) => {
+                                all_sources_available = false;
+                                break;
+                            }
+                        };
+                        let _ = context.set_value(var_name.clone(), eval_val);
+                    } else {
+                        all_sources_available = false;
+                        break;
+                    }
+                } else {
+                    all_sources_available = false;
+                    break;
+                }
+            }
+
+            if all_sources_available {
+                match vtag.ast.eval_with_context(&context) {
+                    Ok(result) => {
+                        let tag_value = match result {
+                            evalexpr::Value::Int(v) => crate::core::messages::TagValue::Integer(v),
+                            evalexpr::Value::Float(v) => crate::core::messages::TagValue::Float(v),
+                            evalexpr::Value::String(v) => crate::core::messages::TagValue::String(v),
+                            evalexpr::Value::Boolean(b) => crate::core::messages::TagValue::Integer(if b { 1 } else { 0 }),
+                            _ => continue, // Unsupported result type
+                        };
+                        
+                        let timestamp_ms = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis() as u64;
+
+                        new_updates.push(HubMessage::UpdateTag {
+                            connection_id: "virtual".to_string(),
+                            device_id: "virtual".to_string(),
+                            state: crate::core::messages::TagState {
+                                tag_id: vtag.config.id.clone(),
+                                value: tag_value,
+                                quality: crate::core::messages::TagQuality::Good,
+                                timestamp_ms,
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        error!("Error evaluating virtual tag '{}': {}", vtag.config.id, e);
+                    }
+                }
+            }
+        }
+
+        // Process the new updates so they go into history and dirty_tags
+        for msg in new_updates {
+            self.process_message(msg);
+        }
+    }
 }
 
 pub async fn run_data_hub_manager(
@@ -206,6 +314,8 @@ pub async fn run_data_hub_manager(
             }
 
             _ = flush_interval.tick() => {
+                hub.evaluate_virtual_tags();
+                
                 let tags = hub.flush_dirty_tags();
                 if !tags.is_empty() {
                     if let Some(app) = &app_handle {

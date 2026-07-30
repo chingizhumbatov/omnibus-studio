@@ -1,9 +1,10 @@
 import { useUIStore } from "@/store/uiStore";
 import { DeviceEditor } from "@/components/devices/DeviceEditor";
 import { ChannelEditor } from "@/components/devices/ChannelEditor";
+import { VirtualTagEditor } from "@/components/devices/VirtualTagEditor";
 
 export function Workspace() {
-  const { activeMode, setActiveMode, selectedDeviceId, selectedChannelId } = useUIStore();
+  const { activeMode, setActiveMode, selectedDeviceId, selectedChannelId, selectedVirtualTagId } = useUIStore();
 
   if (selectedDeviceId) {
     return <DeviceEditor />;
@@ -11,6 +12,10 @@ export function Workspace() {
   
   if (selectedChannelId) {
     return <ChannelEditor />;
+  }
+  
+  if (selectedVirtualTagId) {
+    return <VirtualTagEditor />;
   }
 
   return (

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Represents the physical or logical connection parameters.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -54,6 +55,8 @@ pub struct WorkspaceSession {
 
     pub connections: Vec<ConnectionConfig>,
     pub profiles: Vec<DeviceProfile>,
+    #[serde(default)]
+    pub virtual_tags: Vec<VirtualTagConfig>,
 }
 
 /// The order of bytes for 32-bit and 64-bit values.
@@ -114,6 +117,21 @@ pub struct DeviceProfile {
     pub tags: Vec<TagConfig>,
 }
 
+/// Configuration for a Virtual Tag that computes its value based on other tags.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VirtualTagConfig {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub data_type: DataType,
+    
+    /// Map of variable names used in `expression` to source tag IDs.
+    pub sources: HashMap<String, String>,
+    
+    /// The mathematical or logical expression (e.g., "A + 10")
+    pub expression: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -152,6 +170,7 @@ mod tests {
                 },
             ],
             profiles: vec![],
+            virtual_tags: vec![],
         };
 
         let json = serde_json::to_string_pretty(&session).unwrap();

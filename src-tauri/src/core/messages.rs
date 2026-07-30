@@ -89,6 +89,11 @@ pub enum HubMessage {
     ResetTelemetry {
         device_id: String,
     },
+
+    /// Applies new virtual tags to the Data Hub.
+    ApplyVirtualTags {
+        tags: Vec<crate::workspace::session::VirtualTagConfig>,
+    },
 }
 
 /// Manual Clone implementation for HubMessage.
@@ -143,7 +148,10 @@ impl Clone for HubMessage {
                 // oneshot::Sender is not Clone. This variant is consumed in process_message
                 // before any broadcast and must never reach this path.
                 unreachable!("QueryHistory must not be cloned")
-            }
+            },
+            HubMessage::ApplyVirtualTags { tags } => HubMessage::ApplyVirtualTags {
+                tags: tags.clone(),
+            },
         }
     }
 }

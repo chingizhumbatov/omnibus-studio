@@ -22,6 +22,7 @@ export function Configurator() {
         ui_throttle_ms: 100,
         connections: [],
         profiles: [],
+        virtual_tags: [],
       });
     }
   }, [currentWorkspace]);
@@ -156,6 +157,57 @@ export function Configurator() {
             }}
           >
             + Add Profile
+          </button>
+        </div>
+
+        {/* Virtual Tags Column */}
+        <div
+          style={{
+            flex: 1,
+            background: '#1e1e1e',
+            borderRadius: '8px',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+        >
+          <h3 style={{ marginTop: 0, color: '#ccc' }}>Virtual Tags</h3>
+          {(draftSession.virtual_tags || []).map((vtag, i) => (
+            <div
+              key={i}
+              style={{
+                padding: '8px',
+                background: '#2a2a2a',
+                marginBottom: '8px',
+                borderRadius: '4px',
+              }}
+            >
+              <strong>{vtag.name}</strong>
+              <div style={{ fontSize: '12px', color: '#aaa' }}>Expr: {vtag.expression}</div>
+            </div>
+          ))}
+          <button
+            style={{
+              width: '100%',
+              padding: '8px',
+              background: '#333',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const newTag: any = {
+                    id: `vtag_${Date.now()}`,
+                    name: 'New Virtual Tag',
+                    data_type: 'Float32',
+                    sources: {},
+                    expression: '0',
+                };
+                setDraftSession({...draftSession, virtual_tags: [...(draftSession.virtual_tags || []), newTag]});
+            }}
+          >
+            + Add Virtual Tag
           </button>
         </div>
 

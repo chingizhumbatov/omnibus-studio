@@ -26,18 +26,17 @@ pub async fn start_sniffer(
         loop {
             tokio::select! {
                 Ok(msg) = receiver.recv() => {
-                    if let SnifferMessage::RawTraffic { port_id, direction, payload, timestamp_us } = msg {
-                        let dir_str = match direction {
-                            TrafficDirection::Tx => "tx".to_string(),
-                            TrafficDirection::Rx => "rx".to_string(),
-                        };
-                        buffer.push(SnifferFrame {
-                            connection_id: port_id,
-                            direction: dir_str,
-                            payload,
-                            timestamp_us,
-                        });
-                    }
+                    let SnifferMessage::RawTraffic { port_id, direction, payload, timestamp_us } = msg;
+                    let dir_str = match direction {
+                        TrafficDirection::Tx => "tx".to_string(),
+                        TrafficDirection::Rx => "rx".to_string(),
+                    };
+                    buffer.push(SnifferFrame {
+                        connection_id: port_id,
+                        direction: dir_str,
+                        payload,
+                        timestamp_us,
+                    });
                 }
                 _ = flush_interval.tick() => {
                     if !buffer.is_empty() {
