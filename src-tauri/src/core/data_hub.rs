@@ -4,7 +4,7 @@ use tokio::sync::{broadcast, mpsc};
 use tokio::time::{interval, Duration};
 use tracing::{error, info, warn};
 
-use super::messages::{HubMessage, TagState};
+use super::messages::{HubMessage, SnifferMessage, TagState};
 use crate::protocol::ipc::TagsUpdatedEvent;
 
 const RING_BUFFER_SIZE: usize = 10_000;
@@ -27,12 +27,13 @@ pub struct DataHub {
     /// Internal set of devices whose telemetry has been updated since the last UI emission.
     dirty_telemetry: HashSet<String>,
 
-    /// Buffer for sniffer packets captured between UI flushes
-    sniffer_buffer: Vec<crate::protocol::ipc::SnifferFrame>,
 
     /// Broadcast channel for out-of-tree plugins, sniffer, and AI integrations.
     /// Every incoming message is cloned and sent out to all active subscribers.
     pub event_bus: broadcast::Sender<HubMessage>,
+
+    /// Dedicated broadcast channel for raw protocol sniffer traffic.
+    pub sniffer_bus: broadcast::Sender<SnifferMessage>,
 }
 
 impl Default for DataHub {
@@ -44,14 +45,15 @@ impl Default for DataHub {
 impl DataHub {
     pub fn new() -> Self {
         let (event_bus, _) = broadcast::channel(1024);
+        let (sniffer_bus, _) = broadcast::channel(1024);
         Self {
             tag_history: HashMap::new(),
             port_statuses: HashMap::new(),
             dirty_tags: HashSet::new(),
             telemetry: HashMap::new(),
             dirty_telemetry: HashSet::new(),
-            sniffer_buffer: Vec::new(),
             event_bus,
+            sniffer_bus,
         }
     }
 
@@ -104,20 +106,7 @@ impl DataHub {
 
                 self.dirty_telemetry.insert(device_id.clone());
             }
-            HubMessage::ProtocolTrace {
-                ref connection_id,
-                ref direction,
-                ref payload,
-                ref timestamp_us,
-            } => {
-                let _ = self.event_bus.send(msg.clone());
-                self.sniffer_buffer.push(crate::protocol::ipc::SnifferFrame {
-                    connection_id: connection_id.clone(),
-                    direction: direction.clone(),
-                    payload: payload.clone(),
-                    timestamp_us: *timestamp_us,
-                });
-            }
+
             HubMessage::WriteTag { .. } => {
                 // Broadcast to any listening plugins (ignore if no receivers)
                 let _ = self.event_bus.send(msg.clone());
@@ -171,11 +160,7 @@ impl DataHub {
         updates
     }
 
-    pub fn flush_sniffer_buffer(&mut self) -> Vec<crate::protocol::ipc::SnifferFrame> {
-        let frames = self.sniffer_buffer.clone();
-        self.sniffer_buffer.clear();
-        frames
-    }
+
 }
 
 pub async fn run_data_hub_manager(
@@ -241,15 +226,7 @@ pub async fn run_data_hub_manager(
                     }
                 }
 
-                let frames = hub.flush_sniffer_buffer();
-                if !frames.is_empty() {
-                    if let Some(app) = &app_handle {
-                        let event = crate::protocol::ipc::SnifferUpdatedEvent { frames };
-                        if let Err(e) = app.emit("sniffer-updated", event) {
-                            error!("Failed to emit sniffer-updated event: {}", e);
-                        }
-                    }
-                }
+
             }
 
             else => {

@@ -1,21 +1,16 @@
 import { create } from "zustand";
-import { SystemLog, SnifferFrame } from "@/core/contracts/messages";
+import { SystemLog } from "@/core/contracts/messages";
 
 const MAX_LOGS = 1000;
 
 interface LogState {
   systemLogs: SystemLog[];
-  snifferFrames: SnifferFrame[];
-  
   addSystemLog: (log: Omit<SystemLog, "id" | "timestamp">) => void;
-  addSnifferFrame: (frame: Omit<SnifferFrame, "id">) => void;
   clearSystemLogs: () => void;
-  clearSnifferFrames: () => void;
 }
 
 export const useLogStore = create<LogState>((set) => ({
   systemLogs: [],
-  snifferFrames: [],
 
   addSystemLog: (log) => set((state) => {
     const newLog: SystemLog = {
@@ -33,23 +28,5 @@ export const useLogStore = create<LogState>((set) => ({
     return { systemLogs: newLogs };
   }),
 
-  addSnifferFrame: (frame) => set((state) => {
-    const newFrame: SnifferFrame = {
-      ...frame,
-      id: `sniff_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      // fallback to Date.now() if timestamp is not provided (should be provided by Rust)
-      timestamp: frame.timestamp || Date.now(),
-    };
-    
-    // Ring buffer logic
-    const newFrames = [...state.snifferFrames, newFrame];
-    if (newFrames.length > MAX_LOGS) {
-      newFrames.shift();
-    }
-    
-    return { snifferFrames: newFrames };
-  }),
-
   clearSystemLogs: () => set({ systemLogs: [] }),
-  clearSnifferFrames: () => set({ snifferFrames: [] }),
 }));

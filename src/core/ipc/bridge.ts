@@ -152,30 +152,6 @@ export async function initIpcBridge(): Promise<void> {
     }
   });
 
-  // Listen for raw sniffer traces
-  await listen("sniffer-updated", (event: any) => {
-    const payload = event.payload as any;
-    if (payload && payload.frames) {
-      const logState = useLogStore.getState();
-      
-      // DEBUG:
-      console.log("Received sniffer-updated event!", payload.frames);
-
-      payload.frames.forEach((f: any) => {
-        // Convert array of bytes to hex string (e.g. "0A 1B 2C")
-        const hexPayload = (f.payload as number[])
-          .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-          .join(' ');
-          
-        logState.addSnifferFrame({
-          channelId: f.connection_id,
-          direction: f.direction as "tx" | "rx",
-          payload: hexPayload,
-          timestamp: f.timestamp_us
-        });
-      });
-    }
-  });
 
   // Listen for connection status changes
   await listen("connection-status", (event: any) => {
@@ -184,6 +160,11 @@ export async function initIpcBridge(): Promise<void> {
       const status = payload.is_connected ? "ok" : (payload.error ? "faulted" : "offline");
       
       const uiState = useUIStore.getState();
+      
+      // Update channel status
+      uiState.updateChannel(payload.connection_id, { status });
+
+      // Update devices status
       const devicesInChannel = uiState.devices.filter(d => d.channelId === payload.connection_id);
       for (const dev of devicesInChannel) {
         uiState.updateDevice(dev.id, { status });

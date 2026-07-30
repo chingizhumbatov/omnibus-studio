@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/store/uiStore";
+import { useLogStore } from "@/store/logStore";
 import { ChannelNode, SerialTransportConfig, TcpTransportConfig } from "@/core/contracts/devices";
-import { Save, Plug, Unplug, Settings2, Check } from "lucide-react";
+import { Save, Plug, Unplug, Settings2, Check, RotateCcw } from "lucide-react";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
+import { useDataStore } from "@/store/dataStore";
+import { resetTelemetry } from "@/core/api";
 
 export function ChannelEditor() {
-  const { selectedChannelId, channels, updateChannel } = useUIStore();
+  const { selectedChannelId, channels, updateChannel, updateDevicesInChannel, devices } = useUIStore();
+  const { addSystemLog } = useLogStore();
   const channel = channels.find(c => c.id === selectedChannelId);
+  
+  const telemetryData = useDataStore(state => state.telemetry);
   
   const [localChannel, setLocalChannel] = useState<ChannelNode | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -31,17 +37,51 @@ export function ChannelEditor() {
     try {
       if (connect) {
         await startChannel(channel.id);
+        setLocalChannel({ ...localChannel, status: "ok" });
+        updateChannel(localChannel.id, { status: "ok" });
+        updateDevicesInChannel(localChannel.id, { status: "ok" });
       } else {
         await stopChannel(channel.id);
+        setLocalChannel({ ...localChannel, status: "offline" });
+        updateChannel(localChannel.id, { status: "offline" });
+        updateDevicesInChannel(localChannel.id, { status: "offline" });
       }
-    } catch (e) {
-      console.error(e);
+      
+      addSystemLog({
+        level: connect ? "info" : "warn",
+        source: "core",
+        message: `Successfully sent ${connect ? "connect" : "disconnect"} command for channel '${channel.name}'`,
+      });
+    } catch (err: any) {
+      addSystemLog({
+        level: "error",
+        source: "core",
+        message: `Failed to ${connect ? "connect" : "disconnect"}: ${err.message || err}`,
+      });
     }
   };
 
   const isConnected = channel.status === "ok" || channel.status === "timeout";
   const isSerial = localChannel.transport === "serial";
   const isTcp = localChannel.transport === "tcp";
+
+  // Aggregate telemetry for all devices in this channel
+  const channelDevices = devices.filter(d => d.channelId === selectedChannelId);
+  const aggTelemetry = channelDevices.reduce((acc, dev) => {
+    const t = telemetryData[dev.id];
+    if (t) {
+      acc.requests += t.requests || 0;
+      acc.ok += t.ok || 0;
+      acc.timeouts += t.timeouts || 0;
+      acc.crc_errors += t.crc_errors || 0;
+      acc.exceptions += t.exceptions || 0;
+      // Just take the max response time
+      if (t.response_time_ms !== undefined && t.response_time_ms > acc.response_time_ms) {
+        acc.response_time_ms = t.response_time_ms;
+      }
+    }
+    return acc;
+  }, { requests: 0, ok: 0, timeouts: 0, crc_errors: 0, exceptions: 0, response_time_ms: 0 });
 
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden relative">
@@ -90,6 +130,39 @@ export function ChannelEditor() {
             )}
           </button>
         </div>
+      </div>
+
+      {/* Telemetry Bar */}
+      <div className="bg-[#111116] border-b border-border px-6 py-1.5 flex items-center justify-between text-[11px] font-mono text-zinc-400 select-none z-0 relative">
+        <div className="flex items-center">
+          <span>Requests: <span className="text-zinc-300">{aggTelemetry.requests}</span></span>
+          <span className="mx-2">·</span>
+          <span>OK: <span className="text-emerald-400">{aggTelemetry.ok}</span></span>
+          <span className="mx-2">·</span>
+          <span>Timeouts: <span className="text-red-400">{aggTelemetry.timeouts}</span></span>
+          <span className="mx-2">·</span>
+          <span>CRC errors: <span className="text-red-400">{aggTelemetry.crc_errors}</span></span>
+          <span className="mx-2">·</span>
+          <span>Exceptions: <span className="text-yellow-500">{aggTelemetry.exceptions}</span></span>
+          <span className="mx-2">·</span>
+          <span>Max Response: <span className="text-zinc-300">{aggTelemetry.requests > 0 ? `${aggTelemetry.response_time_ms} ms` : "— ms"}</span></span>
+        </div>
+        <button 
+          onClick={async () => {
+            try {
+              for (const dev of channelDevices) {
+                await resetTelemetry(dev.id);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          className="flex items-center text-zinc-500 hover:text-zinc-300 transition-colors bg-zinc-800/50 hover:bg-zinc-700/50 px-2 py-0.5 rounded border border-zinc-700/50"
+          title="Reset Counters for all devices in this channel"
+        >
+          <RotateCcw className="w-3 h-3 mr-1" />
+          Reset All
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">

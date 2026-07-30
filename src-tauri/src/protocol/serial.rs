@@ -8,7 +8,7 @@ use super::connection::ConnectionWorker;
 use super::context::CommandContext;
 use super::parser::ProtocolAdapter;
 use crate::core::error::{CoreError, Result};
-use crate::core::messages::HubMessage;
+use crate::core::messages::{HubMessage, TrafficDirection};
 use crate::workspace::session::{ConnectionConfig, ConnectionType};
 
 /// Raw Serial Connection Provider (USB/RS-485).
@@ -139,24 +139,12 @@ impl ConnectionWorker for SerialProtocolWorker {
                         }
                     } => {
                         if let Some(request) = adapter.next_request() {
-                            let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
-                            let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
-                                connection_id: connection_id.clone(),
-                                direction: "tx".into(),
-                                payload: request.clone(),
-                                timestamp_us,
-                            }).await;
+                            ctx.send_sniffer_trace(TrafficDirection::Tx, request.clone());
 
                             if stream.write_all(&request).await.is_ok() {
                                 let mut buf = vec![0u8; 1024];
                                 if let Ok(n) = stream.read(&mut buf).await {
-                                    let timestamp_us = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_micros() as u64;
-                                    let _ = ctx.send_to_hub(HubMessage::ProtocolTrace {
-                                        connection_id: connection_id.clone(),
-                                        direction: "rx".into(),
-                                        payload: buf[..n].to_vec(),
-                                        timestamp_us,
-                                    }).await;
+                                    ctx.send_sniffer_trace(TrafficDirection::Rx, buf[..n].to_vec());
                                     if let Ok(tags) = adapter.process_response(&buf[..n]) {
                                         for (device_id, tag) in tags {
                                             let _ = ctx

@@ -83,13 +83,7 @@ pub enum HubMessage {
         responder: oneshot::Sender<Vec<TagState>>,
     },
 
-    /// Emitted by a Connection Worker to trace raw protocol packets (Rx/Tx)
-    ProtocolTrace {
-        connection_id: String,
-        direction: String,
-        payload: Vec<u8>,
-        timestamp_us: u64,
-    },
+
 
     /// Sent by the UI or API to reset telemetry for a specific device
     ResetTelemetry {
@@ -121,17 +115,7 @@ impl Clone for HubMessage {
                 device_id: device_id.clone(),
                 telemetry: telemetry.clone(),
             },
-            HubMessage::ProtocolTrace {
-                connection_id,
-                direction,
-                payload,
-                timestamp_us,
-            } => HubMessage::ProtocolTrace {
-                connection_id: connection_id.clone(),
-                direction: direction.clone(),
-                payload: payload.clone(),
-                timestamp_us: *timestamp_us,
-            },
+
             HubMessage::ConnectionStatus {
                 connection_id,
                 is_connected,
@@ -162,4 +146,22 @@ impl Clone for HubMessage {
             }
         }
     }
+}
+
+/// The direction of the raw protocol traffic.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TrafficDirection {
+    Tx,
+    Rx,
+}
+
+/// The dedicated message contract for protocol sniffers (Raw Channel Traffic).
+#[derive(Debug, Clone)]
+pub enum SnifferMessage {
+    RawTraffic {
+        port_id: String,
+        direction: TrafficDirection,
+        payload: Vec<u8>,
+        timestamp_us: u64,
+    },
 }

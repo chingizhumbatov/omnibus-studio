@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { TagsUpdatedEvent, TagValue, TagState, WorkspaceSession } from './contracts';
+import { TagsUpdatedEvent, TagValue, TagState, WorkspaceSession, SnifferUpdatedEvent } from './contracts';
 
 /**
  * Send a command to the Rust backend to write data to a specific tag.
@@ -54,6 +54,31 @@ export async function listenToTagUpdates(
   callback: (event: TagsUpdatedEvent) => void,
 ): Promise<UnlistenFn> {
   return listen<TagsUpdatedEvent>('tags-updated', (event) => {
+    callback(event.payload);
+  });
+}
+
+/**
+ * Starts the protocol sniffer backend service.
+ */
+export async function startSniffer(): Promise<void> {
+  return invoke('start_sniffer');
+}
+
+/**
+ * Stops the protocol sniffer backend service.
+ */
+export async function stopSniffer(): Promise<void> {
+  return invoke('stop_sniffer');
+}
+
+/**
+ * Subscribes to periodic sniffer frame updates from the Data Hub.
+ */
+export async function listenToSnifferUpdates(
+  callback: (event: SnifferUpdatedEvent) => void,
+): Promise<UnlistenFn> {
+  return listen<SnifferUpdatedEvent>('sniffer-updated', (event) => {
     callback(event.payload);
   });
 }

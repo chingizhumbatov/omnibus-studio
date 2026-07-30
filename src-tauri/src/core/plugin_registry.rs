@@ -49,14 +49,18 @@ pub struct PluginRegistry {
 
     /// Channel for sending data from plugins to DataHub
     hub_tx: mpsc::Sender<HubMessage>,
+
+    /// Channel for sending raw traffic to Sniffer
+    sniffer_tx: tokio::sync::broadcast::Sender<crate::core::messages::SnifferMessage>,
 }
 
 impl PluginRegistry {
-    pub fn new(hub_tx: mpsc::Sender<HubMessage>) -> Self {
+    pub fn new(hub_tx: mpsc::Sender<HubMessage>, sniffer_tx: tokio::sync::broadcast::Sender<crate::core::messages::SnifferMessage>) -> Self {
         Self {
             workers: HashMap::new(),
             worker_txs: HashMap::new(),
             hub_tx,
+            sniffer_tx,
         }
     }
 
@@ -112,7 +116,7 @@ impl PluginRegistry {
                 }
             };
 
-            let context = CommandContext::new(config.connection_id.clone(), self.hub_tx.clone());
+            let context = CommandContext::new(config.connection_id.clone(), self.hub_tx.clone(), self.sniffer_tx.clone());
 
             let (tx, rx) = mpsc::channel(32);
 
@@ -186,7 +190,7 @@ impl PluginRegistry {
             }
         };
 
-        let context = CommandContext::new(conn_id.clone(), self.hub_tx.clone());
+        let context = CommandContext::new(conn_id.clone(), self.hub_tx.clone(), self.sniffer_tx.clone());
         let (tx, rx) = mpsc::channel(32);
 
         if let Err(e) = worker.start(config.clone(), context, rx).await {
@@ -240,7 +244,8 @@ mod tests {
     #[tokio::test]
     async fn test_plugin_registry_lifecycle() {
         let (hub_tx, mut hub_rx) = mpsc::channel(100);
-        let mut registry = PluginRegistry::new(hub_tx);
+        let (sniffer_tx, _) = tokio::sync::broadcast::channel(10);
+        let mut registry = PluginRegistry::new(hub_tx, sniffer_tx);
 
         let session = WorkspaceSession {
             session_id: "test_session".to_string(),

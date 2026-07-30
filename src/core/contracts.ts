@@ -88,3 +88,16 @@ export interface WorkspaceSession {
   connections: ConnectionConfig[];
   profiles: DeviceProfile[];
 }
+
+export type TrafficDirection = 'tx' | 'rx';
+
+export interface SnifferFrame {
+  connection_id: string;
+  direction: TrafficDirection;
+  payload: number[];
+  timestamp_us: number;
+}
+
+export interface SnifferUpdatedEvent {
+  frames: SnifferFrame[];
+}

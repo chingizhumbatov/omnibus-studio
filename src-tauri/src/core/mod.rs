@@ -4,3 +4,4 @@ pub mod error;
 pub mod logging;
 pub mod messages;
 pub mod plugin_registry;
+pub mod sniffer_manager;

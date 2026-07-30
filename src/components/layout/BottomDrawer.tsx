@@ -10,7 +10,7 @@ type DrawerTab = "logs" | "sniffer" | "alarms";
 
 export function BottomDrawer() {
   const { isBottomDrawerOpen, setBottomDrawerOpen } = useUIStore();
-  const { addSystemLog, addSnifferFrame, clearSystemLogs, clearSnifferFrames } = useLogStore();
+  const { addSystemLog, clearSystemLogs } = useLogStore();
   
   const [activeTab, setActiveTab] = useState<DrawerTab>("logs");
 
@@ -23,12 +23,7 @@ export function BottomDrawer() {
         message: `Connection attempt to 192.168.1.${Math.floor(Math.random() * 255)} failed with timeout`,
       });
       
-      const isTx = Math.random() > 0.5;
-      addSnifferFrame({
-        channelId: "chan_1",
-        direction: isTx ? "tx" : "rx",
-        payload: isTx ? "01 03 00 00 00 02 C4 0B" : "01 03 04 01 22 01 22 5A 7F",
-      });
+
     }
   };
 
@@ -110,7 +105,7 @@ export function BottomDrawer() {
           <button 
             onClick={() => {
               if (activeTab === "logs") clearSystemLogs();
-              if (activeTab === "sniffer") clearSnifferFrames();
+              // sniffer clears its own logs via local state now
             }}
             className="p-1.5 text-muted-foreground hover:text-red-400 hover:bg-secondary rounded-md transition-colors"
             title="Clear Current View"

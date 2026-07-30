@@ -1,20 +1,25 @@
 import { useUIStore } from "@/store/uiStore";
 import { useLogStore } from "@/store/logStore";
 import { startChannel, stopChannel } from "@/core/ipc/bridge";
-import { Folder, FolderOpen, Cpu, Settings, Play, Square, Plug, Unplug, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Cpu, Settings, Play, Square, Plug, Unplug, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ChannelNode, DeviceNode, DeviceStatus, ProtocolType } from "@/core/contracts/devices";
 import { AddDeviceModal } from "@/components/devices/AddDeviceModal";
 import { AddChannelModal } from "@/components/devices/AddChannelModal";
 
-const StatusDot = ({ status }: { status: DeviceStatus }) => {
+const StatusDot = ({ status, enabled = true }: { status: DeviceStatus, enabled?: boolean }) => {
   const colors = {
     ok: "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]",
     timeout: "bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]",
     faulted: "bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]",
     offline: "bg-zinc-500"
   };
+  
+  if (!enabled) {
+    return <div className="w-2 h-2 rounded-full mr-2 shrink-0 border border-zinc-600 bg-transparent" title="Disabled" />;
+  }
+
   return <div className={cn("w-2 h-2 rounded-full mr-2 shrink-0", colors[status])} />;
 };
 
@@ -43,12 +48,13 @@ const DeviceItem = ({
         "flex items-center pl-6 py-1.5 cursor-pointer text-sm group transition-colors select-none",
         isSelected 
           ? "bg-primary/10 text-foreground border-r-2 border-primary" 
-          : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
+          : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground",
+        !device.enabled && "opacity-50"
       )}
       onClick={() => setSelectedDevice(device.id)}
       onContextMenu={(e) => onContextMenu(e, device)}
     >
-      <StatusDot status={device.status} />
+      <StatusDot status={device.status} enabled={device.enabled} />
       <Cpu className={cn("w-4 h-4 mr-2 transition-colors", isSelected ? "text-primary" : "text-zinc-400 group-hover:text-primary")} />
       <span className="flex-1 truncate">{device.name}</span>
       
@@ -127,7 +133,15 @@ const ChannelGroup = ({
 };
 
 export function SidebarTree() {
-  const { channels, devices, removeDevice, removeChannel, updateDevice } = useUIStore();
+  const { 
+    channels, 
+    devices, 
+    removeDevice, 
+    removeChannel, 
+    updateDevice,
+    updateChannel,
+    updateDevicesInChannel
+  } = useUIStore();
   const { addSystemLog } = useLogStore();
   
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -158,10 +172,12 @@ export function SidebarTree() {
     try {
       if (connect) {
         await startChannel(node.channelId);
-        updateDevice(node.id, { status: "ok" });
+        updateDevicesInChannel(node.channelId, { status: "ok" });
+        updateChannel(node.channelId, { status: "ok" });
       } else {
         await stopChannel(node.channelId);
-        updateDevice(node.id, { status: "offline" });
+        updateDevicesInChannel(node.channelId, { status: "offline" });
+        updateChannel(node.channelId, { status: "offline" });
       }
       addSystemLog({ level: connect ? "info" : "warn", source: "core", message: `Successfully sent ${connect ? "connect" : "disconnect"} command for device '${node.name}'` });
     } catch (e: any) {

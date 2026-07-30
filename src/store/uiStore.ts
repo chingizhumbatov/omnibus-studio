@@ -34,6 +34,7 @@ interface UIState {
   removeDevice: (id: string) => void;
   setSelectedDevice: (id: string | null) => void;
   updateDevice: (id: string, updates: Partial<DeviceNode>) => void;
+  updateDevicesInChannel: (channelId: string, updates: Partial<DeviceNode>) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -79,6 +80,9 @@ export const useUIStore = create<UIState>()(
       setSelectedDevice: (id) => set({ selectedDeviceId: id, selectedChannelId: null }),
       updateDevice: (id, updates) => set((state) => ({
         devices: state.devices.map(dev => dev.id === id ? { ...dev, ...updates } : dev)
+      })),
+      updateDevicesInChannel: (channelId, updates) => set((state) => ({
+        devices: state.devices.map(dev => dev.channelId === channelId ? { ...dev, ...updates } : dev)
       })),
     }),
     {

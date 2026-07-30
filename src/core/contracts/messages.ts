@@ -8,10 +8,3 @@ export interface SystemLog {
   message: string;
 }
 
-export interface SnifferFrame {
-  id: string;
-  timestamp: number;
-  channelId: string; // which channel this traffic belongs to
-  direction: "tx" | "rx";
-  payload: string; // HEX string e.g. "01 03 00 00 00 02 C4 0B"
-}

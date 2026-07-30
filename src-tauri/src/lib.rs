@@ -6,7 +6,7 @@ pub mod workspace;
 
 use crate::core::messages::{HubMessage, TagState, TagValue};
 use crate::workspace::session::WorkspaceSession;
-use state::AppState;
+use state::{AppState, SnifferState};
 use std::sync::Arc;
 use tauri::Manager;
 use tokio::sync::{mpsc, oneshot, Mutex};
@@ -136,19 +136,27 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let (tx, rx) = mpsc::channel(1024);
+            
+            let hub = crate::core::data_hub::DataHub::new();
+            let sniffer_bus = hub.sniffer_bus.clone();
 
             let registry = Arc::new(Mutex::new(
-                crate::core::plugin_registry::PluginRegistry::new(tx.clone()),
+                crate::core::plugin_registry::PluginRegistry::new(tx.clone(), sniffer_bus.clone()),
             ));
 
             app.manage(AppState {
                 hub_sender: tx.clone(),
                 registry,
+                sniffer_bus,
             });
+            
+            app.manage(SnifferState {
+                task_handle: Arc::new(Mutex::new(None)),
+            });
+            
             let app_handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
-                let hub = crate::core::data_hub::DataHub::new();
                 // Run data hub manager
                 crate::core::data_hub::run_data_hub_manager(hub, rx, Some(app_handle), 100).await;
             });
@@ -165,7 +173,9 @@ pub fn run() {
             list_sessions,
             connect_channel,
             disconnect_channel,
-            reset_telemetry
+            reset_telemetry,
+            crate::core::sniffer_manager::start_sniffer,
+            crate::core::sniffer_manager::stop_sniffer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

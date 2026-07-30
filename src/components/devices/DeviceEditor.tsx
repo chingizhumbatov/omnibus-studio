@@ -10,7 +10,7 @@ import { writeTag, resetTelemetry } from "@/core/api";
 import { TagValue } from "@/core/contracts";
 
 export function DeviceEditor() {
-  const { selectedDeviceId, setSelectedDevice, devices, channels, updateDevice } = useUIStore();
+  const { selectedDeviceId, setSelectedDevice, devices, channels, updateDevice, updateDevicesInChannel, updateChannel } = useUIStore();
   const { addSystemLog } = useLogStore();
   const tagsData = useDataStore(state => state.tags);
   
@@ -63,11 +63,13 @@ export function DeviceEditor() {
         // We optimistically set it to connected for now.
         // In a complete implementation, we'd listen to Tauri events for the actual status.
         setLocalDevice({ ...localDevice, status: "ok" });
-        updateDevice(localDevice.id, { status: "ok" });
+        updateDevicesInChannel(channel.id, { status: "ok" });
+        updateChannel(channel.id, { status: "ok" });
       } else {
         await stopChannel(channel.id);
         setLocalDevice({ ...localDevice, status: "offline" });
-        updateDevice(localDevice.id, { status: "offline" });
+        updateDevicesInChannel(channel.id, { status: "offline" });
+        updateChannel(channel.id, { status: "offline" });
       }
       
       addSystemLog({
@@ -366,12 +368,12 @@ export function DeviceEditor() {
         {isModbus && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Tag Mapping (Registers)</h3>
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Data Point Mapping (Registers)</h3>
               <button 
                 onClick={handleAddTag}
                 className="flex items-center px-2 py-1 text-xs font-medium border border-border rounded-md hover:bg-secondary transition-colors"
               >
-                <Plus className="w-3 h-3 mr-1" /> Add Tag
+                <Plus className="w-3 h-3 mr-1" /> Add Data Point
               </button>
             </div>
             
@@ -379,7 +381,7 @@ export function DeviceEditor() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-secondary/50 text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Tag Name</th>
+                    <th className="px-4 py-2 font-medium">Data Point Name</th>
                     <th className="px-4 py-2 font-medium">Register Type</th>
                     <th className="px-4 py-2 font-medium">Address</th>
                     <th className="px-4 py-2 font-medium">Data Type</th>
@@ -503,7 +505,7 @@ export function DeviceEditor() {
                   {(!config.tags || config.tags.length === 0) && (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
-                        No tags defined. Click "Add Tag" to map registers.
+                        No data points defined. Click "Add Data Point" to map registers.
                       </td>
                     </tr>
                   )}
