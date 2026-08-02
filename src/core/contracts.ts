@@ -89,6 +89,7 @@ export interface VirtualTagConfig {
   data_type: DataType;
   sources: Record<string, string>;
   expression: string;
+  enabled?: boolean;
 }
 
 export interface WorkspaceSession {

@@ -148,15 +148,23 @@ impl DataHub {
             HubMessage::ApplyVirtualTags { ref tags } => {
                 let _ = self.event_bus.send(msg.clone());
                 self.virtual_tags.clear();
+                let mut dirty = false;
                 for config in tags {
                     match evalexpr::build_operator_tree(&config.expression) {
                         Ok(ast) => {
+                            for source_tag_id in config.sources.values() {
+                                self.dirty_tags.insert(source_tag_id.clone());
+                            }
                             self.virtual_tags.push(CompiledVirtualTag { config: config.clone(), ast });
+                            dirty = true;
                         }
                         Err(e) => {
                             error!("Failed to compile virtual tag '{}': {}", config.id, e);
                         }
                     }
+                }
+                if dirty {
+                    self.evaluate_virtual_tags();
                 }
             }
         }
@@ -192,6 +200,9 @@ impl DataHub {
         let mut new_updates = Vec::new();
         
         for vtag in &self.virtual_tags {
+            if !vtag.config.enabled {
+                continue;
+            }
             let mut needs_eval = false;
             for source_tag_id in vtag.config.sources.values() {
                 if self.dirty_tags.contains(source_tag_id) {

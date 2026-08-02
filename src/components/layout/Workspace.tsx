@@ -1,19 +1,36 @@
-import { useUIStore } from "@/store/uiStore";
-import { DeviceEditor } from "@/components/devices/DeviceEditor";
-import { ChannelEditor } from "@/components/devices/ChannelEditor";
-import { VirtualTagEditor } from "@/components/devices/VirtualTagEditor";
+import { useUIStore } from '@/store/uiStore';
+import { DeviceEditor } from '@/components/devices/DeviceEditor';
+import { ChannelEditor } from '@/components/devices/ChannelEditor';
+import { VirtualTagEditor } from '@/components/devices/VirtualTagEditor';
+import { DataHubView } from '@/components/datahub/DataHubView';
 
 export function Workspace() {
-  const { activeMode, setActiveMode, selectedDeviceId, selectedChannelId, selectedVirtualTagId } = useUIStore();
+  const {
+    activeMode,
+    setActiveMode,
+    selectedDeviceId,
+    selectedChannelId,
+    selectedVirtualTagId,
+    activeActivity,
+  } = useUIStore();
+
+  if (
+    activeActivity === 'datahub' &&
+    !selectedDeviceId &&
+    !selectedChannelId &&
+    !selectedVirtualTagId
+  ) {
+    return <DataHubView />;
+  }
 
   if (selectedDeviceId) {
     return <DeviceEditor />;
   }
-  
+
   if (selectedChannelId) {
     return <ChannelEditor />;
   }
-  
+
   if (selectedVirtualTagId) {
     return <VirtualTagEditor />;
   }
@@ -22,21 +39,21 @@ export function Workspace() {
     <div className="h-full w-full bg-background flex flex-col relative">
       <div className="absolute top-4 right-4 z-10 flex bg-card border border-border rounded-md shadow-sm overflow-hidden">
         <button
-          onClick={() => setActiveMode("operator")}
+          onClick={() => setActiveMode('operator')}
           className={`px-3 py-1 text-[10px] font-medium transition-colors ${
-            activeMode === "operator" 
-              ? "bg-primary text-primary-foreground" 
-              : "text-muted-foreground hover:bg-secondary/50"
+            activeMode === 'operator'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-secondary/50'
           }`}
         >
           Grid (Operator)
         </button>
         <button
-          onClick={() => setActiveMode("engineer")}
+          onClick={() => setActiveMode('engineer')}
           className={`px-3 py-1 text-[10px] font-medium transition-colors ${
-            activeMode === "engineer" 
-              ? "bg-primary text-primary-foreground" 
-              : "text-muted-foreground hover:bg-secondary/50"
+            activeMode === 'engineer'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-secondary/50'
           }`}
         >
           Canvas (Engineer)
@@ -44,7 +61,7 @@ export function Workspace() {
       </div>
 
       <div className="flex-1 w-full h-full flex items-center justify-center p-8">
-        {activeMode === "operator" ? (
+        {activeMode === 'operator' ? (
           <div className="w-full h-full border-2 border-dashed border-border rounded-xl flex items-center justify-center">
             <p className="text-muted-foreground">Grid Dashboard Placeholder</p>
           </div>

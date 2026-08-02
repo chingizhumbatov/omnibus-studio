@@ -1,51 +1,41 @@
-import { useUIStore } from "@/store/uiStore";
-import { useLogStore } from "@/store/logStore";
-import { Terminal, Activity, AlertTriangle, Bug, X, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { SystemLogView } from "@/components/logs/SystemLogView";
-import { SnifferView } from "@/components/logs/SnifferView";
+import { useUIStore } from '@/store/uiStore';
+import { useLogStore } from '@/store/logStore';
+import { Terminal, Activity, AlertTriangle, Bug, X, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { SystemLogView } from '@/components/logs/SystemLogView';
+import { SnifferView } from '@/components/logs/SnifferView';
 
-type DrawerTab = "logs" | "sniffer" | "alarms";
+type DrawerTab = 'logs' | 'sniffer' | 'alarms';
 
 export function BottomDrawer() {
   const { isBottomDrawerOpen, setBottomDrawerOpen } = useUIStore();
   const { addSystemLog, clearSystemLogs } = useLogStore();
-  
-  const [activeTab, setActiveTab] = useState<DrawerTab>("logs");
+
+  const [activeTab, setActiveTab] = useState<DrawerTab>('logs');
 
   // Dummy Log Generator for testing virtualization performance
   const generateDummyLogs = () => {
     for (let i = 0; i < 50; i++) {
       addSystemLog({
-        level: Math.random() > 0.8 ? "error" : Math.random() > 0.5 ? "warn" : "info",
-        source: "modbus_worker",
+        level: Math.random() > 0.8 ? 'error' : Math.random() > 0.5 ? 'warn' : 'info',
+        source: 'modbus_worker',
         message: `Connection attempt to 192.168.1.${Math.floor(Math.random() * 255)} failed with timeout`,
       });
-      
-
     }
   };
 
   if (!isBottomDrawerOpen) {
-    return (
-      <div 
-        className="h-8 border-t border-border bg-background flex items-center px-3 cursor-pointer hover:bg-secondary/50 transition-colors"
-        onClick={() => setBottomDrawerOpen(true)}
-      >
-        <Terminal className="w-3 h-3 mr-1.5 text-muted-foreground" />
-        <span className="text-[10px] text-muted-foreground">Output & Messages</span>
-      </div>
-    );
+    return null;
   }
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "logs":
+      case 'logs':
         return <SystemLogView />;
-      case "sniffer":
+      case 'sniffer':
         return <SnifferView />;
-      case "alarms":
+      case 'alarms':
         return (
           <div className="h-full w-full flex items-center justify-center text-zinc-600 bg-[#0d0d0d] font-mono text-[10px] select-none">
             No active alarms. System normal.
@@ -62,49 +52,55 @@ export function BottomDrawer() {
       <div className="flex items-center justify-between border-b border-border bg-card pr-2">
         <div className="flex items-center">
           <button
-            onClick={() => setActiveTab("logs")}
+            onClick={() => setActiveTab('logs')}
             className={cn(
-              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
-              activeTab === "logs" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
+              'flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border',
+              activeTab === 'logs'
+                ? 'bg-secondary text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50',
             )}
           >
             <Terminal className="w-3 h-3 mr-1.5" />
             System Logs
           </button>
           <button
-            onClick={() => setActiveTab("sniffer")}
+            onClick={() => setActiveTab('sniffer')}
             className={cn(
-              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
-              activeTab === "sniffer" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
+              'flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border',
+              activeTab === 'sniffer'
+                ? 'bg-secondary text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50',
             )}
           >
             <Activity className="w-3 h-3 mr-1.5" />
             Protocol Sniffer
           </button>
           <button
-            onClick={() => setActiveTab("alarms")}
+            onClick={() => setActiveTab('alarms')}
             className={cn(
-              "flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border",
-              activeTab === "alarms" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"
+              'flex items-center px-3 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors border-r border-border',
+              activeTab === 'alarms'
+                ? 'bg-secondary text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50',
             )}
           >
             <AlertTriangle className="w-3 h-3 mr-1.5" />
             Alarms
           </button>
         </div>
-        
+
         {/* Toolbar Actions */}
         <div className="flex items-center space-x-1">
-          <button 
+          <button
             onClick={generateDummyLogs}
             className="p-1 text-muted-foreground hover:text-emerald-400 hover:bg-secondary rounded-md transition-colors"
             title="Generate Dummy Data (+50)"
           >
             <Bug className="w-3 h-3" />
           </button>
-          <button 
+          <button
             onClick={() => {
-              if (activeTab === "logs") clearSystemLogs();
+              if (activeTab === 'logs') clearSystemLogs();
               // sniffer clears its own logs via local state now
             }}
             className="p-1 text-muted-foreground hover:text-red-400 hover:bg-secondary rounded-md transition-colors"
@@ -113,7 +109,7 @@ export function BottomDrawer() {
             <Trash2 className="w-3 h-3" />
           </button>
           <div className="w-px h-4 bg-border mx-1"></div>
-          <button 
+          <button
             onClick={() => setBottomDrawerOpen(false)}
             className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
           >
@@ -121,11 +117,9 @@ export function BottomDrawer() {
           </button>
         </div>
       </div>
-      
+
       {/* Tab Content */}
-      <div className="flex-1 overflow-hidden">
-        {renderTabContent()}
-      </div>
+      <div className="flex-1 overflow-hidden">{renderTabContent()}</div>
     </div>
   );
 }

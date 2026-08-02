@@ -1,12 +1,13 @@
-export type ProtocolType = "modbus" | "mqtt" | "opcua" | "generic";
-export type TransportType = "serial" | "tcp" | "mock" | "none";
-export type DeviceStatus = "ok" | "timeout" | "faulted" | "offline";
+export type ProtocolType = 'modbus' | 'mqtt' | 'opcua' | 'generic';
+export type TransportType = 'serial' | 'tcp' | 'mock' | 'none';
+export type DeviceStatus = 'ok' | 'timeout' | 'faulted' | 'offline' | 'connecting';
 
 export interface SerialTransportConfig {
+  portName?: string;
   baudRate: number;
   dataBits: number;
   stopBits: number;
-  parity: "none" | "even" | "odd";
+  parity: 'none' | 'even' | 'odd';
 }
 
 export interface TcpTransportConfig {
@@ -22,11 +23,12 @@ export interface ChannelNode {
   transport: TransportType;
   transportConfig?: SerialTransportConfig | TcpTransportConfig;
   status: DeviceStatus;
+  autoConnect?: boolean; // IDE Mode: reconnect on startup
 }
 
-export type Endianness = "ABCD" | "CDAB" | "BADC" | "DCBA";
-export type ModbusRegisterType = "coil" | "discrete" | "input" | "holding";
-export type DataType = "bool" | "int16" | "uint16" | "int32" | "uint32" | "float32";
+export type Endianness = 'ABCD' | 'CDAB' | 'BADC' | 'DCBA';
+export type ModbusRegisterType = 'coil' | 'discrete' | 'input' | 'holding';
+export type DataType = 'bool' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32';
 
 export interface ModbusTag {
   id: string;
@@ -55,7 +57,7 @@ export interface DeviceNode {
   channelId: string; // Reference to parent channel
   name: string; // e.g., "Main PLC"
   enabled: boolean; // Whether polling is active
-  config: DeviceConfig; 
+  config: DeviceConfig;
   profileId?: string; // Reference to a reusable device profile/template
   status: DeviceStatus;
 }

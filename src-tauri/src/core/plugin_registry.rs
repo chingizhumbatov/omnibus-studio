@@ -131,6 +131,15 @@ impl PluginRegistry {
         }
 
         info!("Successfully loaded {} workers.", self.workers.len());
+
+        // Send virtual tags to the Data Hub
+        if !session.virtual_tags.is_empty() {
+            let _ = self.hub_tx.send(crate::core::messages::HubMessage::ApplyVirtualTags {
+                tags: session.virtual_tags.clone(),
+            }).await;
+            info!("Applied {} virtual tags to Data Hub.", session.virtual_tags.len());
+        }
+
         Ok(())
     }
 

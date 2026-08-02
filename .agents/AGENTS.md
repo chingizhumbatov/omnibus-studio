@@ -20,3 +20,12 @@ Solve only the specific task requested in the current prompt. If you are asked t
 
 7. **Git Commit Conventional Standard**
 All commits must strictly follow the Conventional Commits specification. Messages must be in English and use the imperative mood (e.g., `feat: add ...`). Valid types are `feat`, `fix`, `chore`, `refactor`, `docs`, `style`, `perf`, `test`. Include scopes (`core`, `ui`, `ipc`) when appropriate.
+
+8. **UI Design Standard (High-Density IDE Mode)**
+- **Do not** use standard web/shadcn spacing (e.g. `p-6`, `h-10`, `text-sm`) for main workspace editors.
+- **Do** use strict High-Density IDE Mode (like VS Code) to fit more data on screen without scrolling:
+  - Base typography: `text-[11px]` (sometimes `text-xs`), headers `uppercase tracking-wider`.
+  - Inputs/Selects: `h-7` (28px height) with `px-2 py-1`.
+  - Spacing/Gaps: Compact padding like `p-3`, `gap-3`, `px-3 py-1.5`.
+  - Containers: `rounded-lg shadow-sm`.
+  - Focus rings: subtle (`focus-visible:ring-1 focus-visible:ring-primary`).

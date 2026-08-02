@@ -130,6 +130,15 @@ async fn disconnect_channel(
     Ok(())
 }
 
+#[tauri::command]
+async fn apply_virtual_tags(
+    state: tauri::State<'_, AppState>,
+    tags: Vec<crate::workspace::session::VirtualTagConfig>,
+) -> Result<(), String> {
+    let _ = state.hub_sender.send(crate::core::messages::HubMessage::ApplyVirtualTags { tags }).await;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -173,6 +182,7 @@ pub fn run() {
             list_sessions,
             connect_channel,
             disconnect_channel,
+            apply_virtual_tags,
             reset_telemetry,
             crate::core::sniffer_manager::start_sniffer,
             crate::core::sniffer_manager::stop_sniffer,

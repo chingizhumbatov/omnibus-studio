@@ -1,13 +1,11 @@
-
-
 export interface TcpConnection {
-  type: "Tcp";
+  type: 'Tcp';
   ip: string;
   port: number;
 }
 
 export interface SerialConnection {
-  type: "Serial";
+  type: 'Serial';
   port: string;
   baud_rate: number;
   data_bits: number;
@@ -15,7 +13,7 @@ export interface SerialConnection {
   stop_bits: number;
 }
 
-export type ConnectionType = TcpConnection | SerialConnection | { type: "Mock" };
+export type ConnectionType = TcpConnection | SerialConnection | { type: 'Mock' };
 
 export interface DeviceInstance {
   instance_id: string;
@@ -36,14 +34,12 @@ export interface ConnectionConfig {
 // Events emitted by Rust (received in React)
 // ----------------------------------------------------
 
-export type TagQuality = 
-  | { status: "Good" }
-  | { status: "Bad"; reason: string }
-  | { status: "Unknown" };
+export type TagQuality =
+  { status: 'Good' } | { status: 'Bad'; reason: string } | { status: 'Unknown' };
 
 export interface TagValue {
-  type: "Integer" | "Float" | "String" | "Raw";
-  value: any; 
+  type: 'Integer' | 'Float' | 'String' | 'Raw';
+  value: any;
 }
 
 export interface TagState {

@@ -1,7 +1,7 @@
-import { useRef, useEffect } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useLogStore } from "@/store/logStore";
-import { cn } from "@/lib/utils";
+import { useRef, useEffect } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useLogStore } from '@/store/logStore';
+import { cn } from '@/lib/utils';
 
 export function SystemLogView() {
   const { systemLogs } = useLogStore();
@@ -23,8 +23,8 @@ export function SystemLogView() {
 
   return (
     <div className="h-full w-full bg-[#0d0d0d] font-mono text-[11px] flex flex-col">
-      <div 
-        ref={parentRef} 
+      <div
+        ref={parentRef}
         className="flex-1 overflow-auto p-1 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent"
       >
         <div
@@ -38,7 +38,7 @@ export function SystemLogView() {
             const log = systemLogs[virtualRow.index];
             const date = new Date(log.timestamp);
             const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}.${date.getMilliseconds().toString().padStart(3, '0')}`;
-            
+
             return (
               <div
                 key={virtualRow.key}
@@ -53,21 +53,27 @@ export function SystemLogView() {
                 className="flex items-center px-2 hover:bg-white/5 transition-colors group leading-tight"
               >
                 <span className="text-zinc-500 w-28 shrink-0 select-none">[{timeStr}]</span>
-                <span className={cn(
-                  "w-12 shrink-0 font-semibold select-none",
-                  log.level === "info" && "text-blue-400",
-                  log.level === "warn" && "text-yellow-400",
-                  log.level === "error" && "text-red-500"
-                )}>
+                <span
+                  className={cn(
+                    'w-12 shrink-0 font-semibold select-none',
+                    log.level === 'info' && 'text-blue-400',
+                    log.level === 'warn' && 'text-yellow-400',
+                    log.level === 'error' && 'text-red-500',
+                  )}
+                >
                   {log.level.toUpperCase()}
                 </span>
-                <span className="text-zinc-400 w-24 shrink-0 truncate select-none">[{log.source}]</span>
-                <span className={cn(
-                  "flex-1 ml-2",
-                  log.level === "info" && "text-zinc-300",
-                  log.level === "warn" && "text-yellow-200",
-                  log.level === "error" && "text-red-400"
-                )}>
+                <span className="text-zinc-400 w-24 shrink-0 truncate select-none">
+                  [{log.source}]
+                </span>
+                <span
+                  className={cn(
+                    'flex-1 ml-2',
+                    log.level === 'info' && 'text-zinc-300',
+                    log.level === 'warn' && 'text-yellow-200',
+                    log.level === 'error' && 'text-red-400',
+                  )}
+                >
                   {log.message}
                 </span>
               </div>

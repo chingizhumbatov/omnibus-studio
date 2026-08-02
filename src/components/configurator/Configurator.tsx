@@ -13,7 +13,6 @@ export function Configurator() {
   const [draftSession, setDraftSession] = useState<WorkspaceSession | null>(null);
 
   useEffect(() => {
-     
     if (currentWorkspace) {
       setDraftSession(JSON.parse(JSON.stringify(currentWorkspace))); // Deep copy
     } else {
@@ -196,15 +195,18 @@ export function Configurator() {
               cursor: 'pointer',
             }}
             onClick={() => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const newTag: any = {
-                    id: `vtag_${Date.now()}`,
-                    name: 'New Virtual Tag',
-                    data_type: 'Float32',
-                    sources: {},
-                    expression: '0',
-                };
-                setDraftSession({...draftSession, virtual_tags: [...(draftSession.virtual_tags || []), newTag]});
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const newTag: any = {
+                id: `vtag_${Date.now()}`,
+                name: 'New Virtual Tag',
+                data_type: 'Float32',
+                sources: {},
+                expression: '0',
+              };
+              setDraftSession({
+                ...draftSession,
+                virtual_tags: [...(draftSession.virtual_tags || []), newTag],
+              });
             }}
           >
             + Add Virtual Tag

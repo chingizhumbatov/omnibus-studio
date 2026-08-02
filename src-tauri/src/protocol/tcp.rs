@@ -58,8 +58,9 @@ impl ConnectionWorker for TcpProtocolWorker {
             loop {
                 // Connection phase
                 info!("Attempting to connect to {}", addr);
-                match TcpStream::connect(&addr).await {
-                    Ok(mut stream) => {
+                let connect_timeout = std::cmp::max(Duration::from_secs(3), response_timeout);
+                match tokio::time::timeout(connect_timeout, TcpStream::connect(&addr)).await {
+                    Ok(Ok(mut stream)) => {
                         info!("Successfully connected to {}", addr);
                         let _ = ctx
                             .send_to_hub(HubMessage::ConnectionStatus {
@@ -177,8 +178,11 @@ impl ConnectionWorker for TcpProtocolWorker {
                             }
                         }
                     }
-                    Err(e) => {
+                    Ok(Err(e)) => {
                         error!("Connection to {} failed: {}", addr, e);
+                    }
+                    Err(_) => {
+                        error!("Connection to {} timed out after {}ms", addr, connect_timeout.as_millis());
                     }
                 }
 

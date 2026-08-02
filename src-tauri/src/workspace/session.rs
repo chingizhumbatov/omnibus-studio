@@ -130,6 +130,13 @@ pub struct VirtualTagConfig {
     
     /// The mathematical or logical expression (e.g., "A + 10")
     pub expression: String,
+    
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[cfg(test)]

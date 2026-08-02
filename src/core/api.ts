@@ -1,6 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { TagsUpdatedEvent, TagValue, TagState, WorkspaceSession, SnifferUpdatedEvent } from './contracts';
+import {
+  TagsUpdatedEvent,
+  TagValue,
+  TagState,
+  WorkspaceSession,
+  SnifferUpdatedEvent,
+} from './contracts';
 
 /**
  * Send a command to the Rust backend to write data to a specific tag.
@@ -38,6 +44,13 @@ export async function loadWorkspace(session: WorkspaceSession): Promise<void> {
  */
 export async function stopWorkspace(): Promise<void> {
   return invoke('stop_workspace');
+}
+
+/**
+ * Sends the latest virtual tags configuration to the Data Hub.
+ */
+export async function applyVirtualTags(tags: any[]): Promise<void> {
+  return invoke('apply_virtual_tags', { tags });
 }
 
 /**
@@ -81,4 +94,25 @@ export async function listenToSnifferUpdates(
   return listen<SnifferUpdatedEvent>('sniffer-updated', (event) => {
     callback(event.payload);
   });
+}
+
+/**
+ * Saves a workspace session to a file on disk via the Rust backend.
+ */
+export async function saveWorkspaceSession(session: WorkspaceSession): Promise<void> {
+  return invoke('save_session', { session });
+}
+
+/**
+ * Loads a workspace session from a file on disk via the Rust backend.
+ */
+export async function loadWorkspaceSession(sessionId: string): Promise<WorkspaceSession> {
+  return invoke('load_session', { sessionId });
+}
+
+/**
+ * Lists all saved workspace sessions on disk via the Rust backend.
+ */
+export async function listWorkspaces(): Promise<string[]> {
+  return invoke('list_sessions');
 }

@@ -1,5 +1,5 @@
-import { useUIStore } from "@/store/uiStore";
-import { SidebarTree } from "./SidebarTree";
+import { useUIStore } from '@/store/uiStore';
+import { SidebarTree } from './SidebarTree';
 
 export function Sidebar() {
   const { activeActivity, isSidebarOpen } = useUIStore();
@@ -8,7 +8,7 @@ export function Sidebar() {
 
   return (
     <div className="h-full w-full bg-card border-r border-border flex flex-col">
-      {activeActivity === "devices" ? (
+      {activeActivity === 'devices' ? (
         <SidebarTree />
       ) : (
         <>

@@ -1,4 +1,4 @@
-export type LogLevel = "info" | "warn" | "error";
+export type LogLevel = 'info' | 'warn' | 'error';
 
 export interface SystemLog {
   id: string;
@@ -7,4 +7,3 @@ export interface SystemLog {
   source: string; // e.g. "core", "modbus", "ui"
   message: string;
 }
-
