@@ -139,6 +139,14 @@ async fn apply_virtual_tags(
     Ok(())
 }
 
+#[tauri::command]
+async fn get_available_ports() -> Result<Vec<String>, String> {
+    match tokio_serial::available_ports() {
+        Ok(ports) => Ok(ports.into_iter().map(|p| p.port_name).collect()),
+        Err(e) => Err(format!("Failed to enumerate serial ports: {}", e)),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -183,6 +191,7 @@ pub fn run() {
             connect_channel,
             disconnect_channel,
             apply_virtual_tags,
+            get_available_ports,
             reset_telemetry,
             crate::core::sniffer_manager::start_sniffer,
             crate::core::sniffer_manager::stop_sniffer,

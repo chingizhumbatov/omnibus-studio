@@ -26,7 +26,7 @@ export function buildConnectionConfig(
     const sConfig = channel.transportConfig as any;
     connection_type = {
       type: 'Serial',
-      port: 'COM1', // TODO: Should come from transport config
+      port: sConfig?.portName || 'COM1',
       baud_rate: sConfig?.baudRate || 115200,
       data_bits: sConfig?.dataBits || 8,
       parity: sConfig?.parity || 'none',
@@ -123,6 +123,18 @@ export async function startChannel(channelId: string): Promise<void> {
 export async function stopChannel(channelId: string): Promise<void> {
   console.log('Sending disconnect_channel to Rust:', channelId);
   await invoke('disconnect_channel', { connectionId: channelId });
+}
+
+/**
+ * Gets a list of available COM ports from the OS.
+ */
+export async function getAvailablePorts(): Promise<string[]> {
+  try {
+    return await invoke<string[]>('get_available_ports');
+  } catch (err) {
+    console.error('Failed to get available ports:', err);
+    return [];
+  }
 }
 
 let isListening = false;

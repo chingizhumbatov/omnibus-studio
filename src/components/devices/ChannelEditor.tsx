@@ -3,8 +3,8 @@ import { useUIStore } from '@/store/uiStore';
 import { useLogStore } from '@/store/logStore';
 import { TooltipInfo } from '@/components/ui/TooltipInfo';
 import { ChannelNode, SerialTransportConfig, TcpTransportConfig } from '@/core/contracts/devices';
-import { Save, Plug, Unplug, Settings2, Check, RotateCcw, Copy, Info } from 'lucide-react';
-import { startChannel, stopChannel } from '@/core/ipc/bridge';
+import { Save, Plug, Unplug, Settings2, Check, RotateCcw, Copy, Info, RefreshCw, X } from 'lucide-react';
+import { startChannel, stopChannel, getAvailablePorts } from '@/core/ipc/bridge';
 import { useDataStore } from '@/store/dataStore';
 import { resetTelemetry } from '@/core/api';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,18 @@ export function ChannelEditor() {
 
   const [localChannel, setLocalChannel] = useState<ChannelNode | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [availablePorts, setAvailablePorts] = useState<string[]>([]);
+
+  const fetchPorts = async () => {
+    const ports = await getAvailablePorts();
+    setAvailablePorts(ports);
+  };
+
+  useEffect(() => {
+    if (channel?.transport === 'serial') {
+      fetchPorts();
+    }
+  }, [channel?.transport]);
   const [hasCopiedId, setHasCopiedId] = useState(false);
 
   const handleCopyId = () => {
@@ -76,6 +88,9 @@ export function ChannelEditor() {
       if (connect) {
         // Auto-save to ensure backend uses the latest typed configuration (e.g. IP address)
         updateChannel(localChannel.id, localChannel);
+        setIsSaved(true);
+        setEditorDirty(false);
+        setTimeout(() => setIsSaved(false), 2000);
         
         // Set connecting status BEFORE initiating the connection to prevent overriding the backend's response in case it connects instantly
         setLocalChannel(prev => prev ? { ...prev, status: 'connecting' } : prev);
@@ -111,6 +126,42 @@ export function ChannelEditor() {
   const isFaulted = channel.status === 'faulted';
   const isSerial = localChannel.transport === 'serial';
   const isTcp = localChannel.transport === 'tcp';
+  const tcpConfig = isTcp ? (localChannel.transportConfig as TcpTransportConfig) : null;
+
+  // Validation Logic
+  const isValidIp = (ipStr: string) => {
+    if (!ipStr) return false;
+    if (ipStr.trim() !== ipStr) return false; // no leading/trailing spaces
+    if (ipStr.toLowerCase() === 'localhost') return true;
+    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = ipStr.match(ipv4Regex);
+    if (match) {
+      return match.slice(1).every((p) => {
+        const n = parseInt(p, 10);
+        return n >= 0 && n <= 255 && p === n.toString(); // no leading zeros
+      });
+    }
+    // Basic hostname/ipv6 check
+    return /^[a-zA-Z0-9.\-:]+$/.test(ipStr);
+  };
+
+  const ipAddress = tcpConfig?.ipAddress || '';
+  const port = tcpConfig?.tcpPort as any;
+  const timeout = tcpConfig?.responseTimeoutMs as any;
+  const serialConfig = isSerial ? (localChannel.transportConfig as SerialTransportConfig) : null;
+  const portName = serialConfig?.portName || '';
+
+  const isValidComPort = (portStr: string) => {
+    if (!portStr) return false;
+    if (portStr.trim() !== portStr) return false; // no leading/trailing spaces
+    return portStr.length >= 3; // basic check: at least 3 chars e.g. COM1, /dev/tty
+  };
+
+  const isIpValid = isTcp ? isValidIp(ipAddress) : true;
+  const isPortValid = isTcp ? typeof port === 'number' && port >= 1 && port <= 65535 : true;
+  const isTimeoutValid = isTcp ? typeof timeout === 'number' && timeout >= 50 && timeout <= 30000 : true;
+  const isComPortValid = isSerial ? isValidComPort(portName) : true;
+  const isConfigValid = isIpValid && isPortValid && isTimeoutValid && isComPortValid;
 
   // Aggregate telemetry for all devices in this channel
   const channelDevices = devices.filter((d) => d.channelId === selectedChannelId);
@@ -197,7 +248,14 @@ export function ChannelEditor() {
           ) : (
             <button
               onClick={() => handleConnect(true)}
-              className="flex items-center h-6 px-2.5 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20 rounded shadow-sm transition-all text-[11px] font-medium"
+              disabled={!isConfigValid}
+              title={!isConfigValid ? 'Fix configuration errors before connecting' : 'Connect'}
+              className={cn(
+                'flex items-center h-6 px-2.5 rounded shadow-sm transition-all text-[11px] font-medium border border-transparent',
+                !isConfigValid
+                  ? 'bg-secondary/50 text-secondary-foreground/50 cursor-not-allowed'
+                  : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20',
+              )}
             >
               <Plug className="w-3 h-3 mr-1.5" />
               Connect
@@ -208,9 +266,13 @@ export function ChannelEditor() {
 
           <button
             onClick={handleSave}
+            disabled={!isConfigValid}
+            title={!isConfigValid ? 'Fix configuration errors before saving' : 'Save changes'}
             className={cn(
-              'flex items-center h-6 px-2.5 rounded shadow-sm transition-all text-[11px] font-medium relative',
-              isSaved
+              'flex items-center h-6 px-2.5 rounded shadow-sm transition-all text-[11px] font-medium relative border border-transparent',
+              !isConfigValid
+                ? 'bg-secondary/50 text-secondary-foreground/50 cursor-not-allowed'
+                : isSaved
                 ? 'bg-emerald-600 text-white'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
@@ -306,8 +368,9 @@ export function ChannelEditor() {
                   type="text"
                   maxLength={64}
                   value={localChannel.name}
+                  disabled={isRunning}
                   onChange={(e) => setLocalChannel({ ...localChannel, name: e.target.value })}
-                  className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 pr-10 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 pr-10 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span
                   className={cn(
@@ -340,9 +403,8 @@ export function ChannelEditor() {
                   </label>
                   <input
                     type="text"
-                    value={
-                      (localChannel.transportConfig as TcpTransportConfig)?.ipAddress || '127.0.0.1'
-                    }
+                    value={ipAddress}
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as TcpTransportConfig;
                       setLocalChannel({
@@ -350,9 +412,15 @@ export function ChannelEditor() {
                         transportConfig: { ...cfg, ipAddress: e.target.value },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className={cn(
+                      "flex h-7 w-full min-w-0 rounded border bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:opacity-50 disabled:cursor-not-allowed",
+                      !isIpValid ? "border-red-500/50 focus-visible:ring-red-500" : "border-input focus-visible:ring-primary"
+                    )}
                     placeholder="127.0.0.1"
                   />
+                  {!isIpValid && (
+                    <span className="text-[9px] text-red-400 mt-1 block">Invalid IP address or hostname</span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium text-muted-foreground mb-1">
@@ -360,16 +428,25 @@ export function ChannelEditor() {
                   </label>
                   <input
                     type="number"
-                    value={(localChannel.transportConfig as TcpTransportConfig)?.tcpPort || 502}
+                    value={port ?? ''}
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as TcpTransportConfig;
+                      const val = e.target.value;
                       setLocalChannel({
                         ...localChannel,
-                        transportConfig: { ...cfg, tcpPort: parseInt(e.target.value) || 502 },
+                        transportConfig: { ...cfg, tcpPort: val === '' ? ('' as any) : parseInt(val, 10) },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className={cn(
+                      "flex h-7 w-full min-w-0 rounded border bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:opacity-50 disabled:cursor-not-allowed",
+                      !isPortValid ? "border-red-500/50 focus-visible:ring-red-500" : "border-input focus-visible:ring-primary"
+                    )}
+                    placeholder="502"
                   />
+                  {!isPortValid && (
+                    <span className="text-[9px] text-red-400 mt-1 block">Must be between 1 and 65535</span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium text-muted-foreground mb-1">
@@ -377,44 +454,71 @@ export function ChannelEditor() {
                   </label>
                   <input
                     type="number"
-                    value={
-                      (localChannel.transportConfig as TcpTransportConfig)?.responseTimeoutMs ?? 500
-                    }
+                    value={timeout ?? ''}
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as TcpTransportConfig;
+                      const val = e.target.value;
                       setLocalChannel({
                         ...localChannel,
                         transportConfig: {
                           ...cfg,
-                          responseTimeoutMs: parseInt(e.target.value) || 500,
+                          responseTimeoutMs: val === '' ? ('' as any) : parseInt(val, 10),
                         },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className={cn(
+                      "flex h-7 w-full min-w-0 rounded border bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:opacity-50 disabled:cursor-not-allowed",
+                      !isTimeoutValid ? "border-red-500/50 focus-visible:ring-red-500" : "border-input focus-visible:ring-primary"
+                    )}
+                    placeholder="500"
                   />
+                  {!isTimeoutValid && (
+                    <span className="text-[9px] text-red-400 mt-1 block">Must be between 50 and 30000</span>
+                  )}
                 </div>
               </>
             )}
 
             {isSerial && (
               <>
-                <div>
+                <div className="relative">
                   <label className="block text-[11px] font-medium text-muted-foreground mb-1">
                     COM Port
                   </label>
-                  <input
-                    type="text"
-                    value={(localChannel.transportConfig as SerialTransportConfig)?.portName || ''}
-                    onChange={(e) => {
-                      const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
-                      setLocalChannel({
-                        ...localChannel,
-                        transportConfig: { ...cfg, portName: e.target.value },
-                      });
-                    }}
-                    placeholder="e.g. COM1 or /dev/ttyUSB0"
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  />
+                  <div className="flex gap-1 relative">
+                    <select
+                      value={portName}
+                      disabled={isRunning}
+                      onChange={(e) => {
+                        const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
+                        setLocalChannel({
+                          ...localChannel,
+                          transportConfig: { ...cfg, portName: e.target.value },
+                        });
+                      }}
+                      className={cn(
+                        "flex h-7 w-full min-w-0 rounded border bg-background px-2 py-1 text-[11px] font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:opacity-50 disabled:cursor-not-allowed",
+                        !isComPortValid ? "border-red-500/50 focus-visible:ring-red-500" : "border-input focus-visible:ring-primary"
+                      )}
+                    >
+                      <option value="" disabled>Select a port...</option>
+                      {[...new Set([...availablePorts, portName])].filter(Boolean).map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={fetchPorts}
+                      disabled={isRunning}
+                      title="Refresh ports"
+                      className="flex items-center justify-center h-7 w-7 rounded border border-input bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {!isComPortValid && (
+                    <span className="text-[9px] text-red-400 mt-1 block">Invalid port name</span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium text-muted-foreground mb-1">
@@ -424,6 +528,7 @@ export function ChannelEditor() {
                     value={
                       (localChannel.transportConfig as SerialTransportConfig)?.baudRate || 9600
                     }
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
                       setLocalChannel({
@@ -431,7 +536,7 @@ export function ChannelEditor() {
                         transportConfig: { ...cfg, baudRate: parseInt(e.target.value) || 9600 },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value={9600}>9600</option>
                     <option value={19200}>19200</option>
@@ -447,6 +552,7 @@ export function ChannelEditor() {
                   </label>
                   <select
                     value={(localChannel.transportConfig as SerialTransportConfig)?.dataBits || 8}
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
                       setLocalChannel({
@@ -454,7 +560,7 @@ export function ChannelEditor() {
                         transportConfig: { ...cfg, dataBits: parseInt(e.target.value) || 8 },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value={7}>7</option>
                     <option value={8}>8</option>
@@ -467,6 +573,7 @@ export function ChannelEditor() {
                   </label>
                   <select
                     value={(localChannel.transportConfig as SerialTransportConfig)?.stopBits || 1}
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
                       setLocalChannel({
@@ -474,7 +581,7 @@ export function ChannelEditor() {
                         transportConfig: { ...cfg, stopBits: parseInt(e.target.value) || 1 },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value={1}>1</option>
                     <option value={2}>2</option>
@@ -489,6 +596,7 @@ export function ChannelEditor() {
                     value={
                       (localChannel.transportConfig as SerialTransportConfig)?.parity || 'none'
                     }
+                    disabled={isRunning}
                     onChange={(e) => {
                       const cfg = (localChannel.transportConfig || {}) as SerialTransportConfig;
                       setLocalChannel({
@@ -496,7 +604,7 @@ export function ChannelEditor() {
                         transportConfig: { ...cfg, parity: e.target.value as any },
                       });
                     }}
-                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    className="flex h-7 w-full min-w-0 rounded border border-input bg-background px-2 py-1 text-[11px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="none">None</option>
                     <option value="even">Even</option>
