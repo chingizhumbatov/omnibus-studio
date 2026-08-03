@@ -1,7 +1,7 @@
 import { useUIStore } from '@/store/uiStore';
 import { useDataStore } from '@/store/dataStore';
 import { applyVirtualTags } from '@/core/api';
-import { Calculator, Save, Trash2, Code2, Database, AlertCircle, Info } from 'lucide-react';
+import { Calculator, Save, Trash2, Code2, Database, AlertCircle } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { VirtualTagConfig } from '@/core/contracts';
 import { cn } from '@/lib/utils';

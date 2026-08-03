@@ -3,7 +3,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useLogStore } from '@/store/logStore';
 import { TooltipInfo } from '@/components/ui/TooltipInfo';
 import { ChannelNode, SerialTransportConfig, TcpTransportConfig } from '@/core/contracts/devices';
-import { Save, Plug, Unplug, Settings2, Check, RotateCcw, Copy, Info, RefreshCw, X } from 'lucide-react';
+import { Save, Plug, Unplug, Settings2, Check, RotateCcw, Copy, RefreshCw } from 'lucide-react';
 import { startChannel, stopChannel, getAvailablePorts } from '@/core/ipc/bridge';
 import { useDataStore } from '@/store/dataStore';
 import { resetTelemetry } from '@/core/api';

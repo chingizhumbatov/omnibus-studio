@@ -23,7 +23,7 @@ export default function App() {
         const workspaces = await listWorkspaces();
         // Load "default" if it exists, otherwise do nothing (start empty)
         if (workspaces.includes('default')) {
-          const session = await loadWorkspaceSession('default');
+          await loadWorkspaceSession('default');
           // The UI store uses localStorage, so we don't need to overwrite everything
           // unless we want the file to be the single source of truth.
           // For now, we rely on Zustand's persist, but we DO auto-start channels here!

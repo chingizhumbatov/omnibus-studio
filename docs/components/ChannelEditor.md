@@ -88,3 +88,9 @@ The Connect/Disconnect button accurately reflects the channel's lifecycle:
 ### 2. Strict State Locking (Active Connections)
 - When a channel is in a `connecting` or `ok` (running) state, all configuration inputs (IP, Ports, Timeouts, etc.) are strictly disabled (`disabled={isRunning}`) and styled with `opacity-50` and `cursor-not-allowed`.
 - **Reasoning**: This prevents the user from modifying parameters while the background Rust worker is polling. It ensures that the UI always perfectly reflects the configuration that the backend is currently using. Users must explicitly click **Disconnect** (Stop) to unlock the form and make changes.
+
+## Technical Debt (TODO)
+> [!WARNING]
+> **ESLint Strict Typing**: Currently, the codebase contains multiple `as any` type assertions (especially in `src/core/ipc/bridge.ts` and `src/components/devices/ChannelEditor.tsx`). This violates the `@typescript-eslint/no-explicit-any` rule enforced by the project's Husky pre-commit hooks, requiring `--no-verify` to bypass during commits. 
+> 
+> **Action Required**: Refactor these assertions by creating strict TypeScript interfaces for transport payloads (e.g., `TcpTransportConfig`, `SerialTransportConfig`) across the IPC boundary to ensure type safety and allow normal `git commit` operations without bypassing hooks.
