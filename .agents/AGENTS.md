@@ -29,3 +29,8 @@ All commits must strictly follow the Conventional Commits specification. Message
   - Spacing/Gaps: Compact padding like `p-3`, `gap-3`, `px-3 py-1.5`.
   - Containers: `rounded-lg shadow-sm`.
   - Focus rings: subtle (`focus-visible:ring-1 focus-visible:ring-primary`).
+
+9. **CI/CD Strictness & Unused Variables**
+- The project has automated GitHub Actions CI/CD for Windows builds. The TypeScript compiler (`tsc`) is configured strictly: **any unused imports or variables (TS6133) will break the production build**.
+- **Always** clean up unused imports and variables before committing code.
+- **Always** run `npm run build` locally to verify TypeScript compilation passes before pushing UI changes that might trigger the GitHub Actions workflow.
